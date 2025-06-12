@@ -16,5 +16,8 @@ class Config:
     # Google GenAI config
     GOOGLE_GENAI_API_KEY = os.getenv('GOOGLE_API_KEY')
 
-    if not SUPABASE_URL or not SUPABASE_KEY or not GOOGLE_GENAI_API_KEY:
+    # LangGraph Checkpointer config
+    CHECKPOINTER_DB_URI = os.getenv('CHECKPOINTER_DB_URI')
+
+    if not SUPABASE_URL or not SUPABASE_KEY or not GOOGLE_GENAI_API_KEY or not CHECKPOINTER_DB_URI:
         raise ValueError('Missing environment variables')

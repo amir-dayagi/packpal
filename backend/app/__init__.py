@@ -1,24 +1,36 @@
 from app.config import Config
 from flask import Flask
-from langchain.chat_models import init_chat_model
+from flask_cors import CORS
+from psycopg_pool import ConnectionPool
+import atexit
 
 def create_app():
     """Create and configure the Flask application"""
     app = Flask(__name__)
     
+    # Configure CORS
+    CORS(app)
+
     # Configure app
     app.config['SECRET_KEY'] = Config.SECRET_KEY
     app.config['SUPABASE_URL'] = Config.SUPABASE_URL
     app.config['SUPABASE_KEY'] = Config.SUPABASE_KEY
+    app.config['CHECKPOINTER_DB_URI'] = Config.CHECKPOINTER_DB_URI
 
-    # Create LLM model
-    app.llm = init_chat_model("gemini-2.0-flash", model_provider="google_genai")
+    # Initialize connection pool (for assistant checkpointer)
+    connection_pool = ConnectionPool(
+        Config.CHECKPOINTER_DB_URI,
+        max_size=10,
+        min_size=1
+    )
+    app.connection_pool = connection_pool
+    atexit.register(connection_pool.close)
     
     # Register blueprints
-    from app.routes import trips, items, suggested_items
-    app.register_blueprint(trips.bp, url_prefix='/trips')
-    app.register_blueprint(items.bp, url_prefix='/items')
-    app.register_blueprint(suggested_items.bp, url_prefix='/suggested-items')
+    from app.routes import trips, items, assistant
+    app.register_blueprint(trips.bp)
+    app.register_blueprint(items.bp)
+    app.register_blueprint(assistant.bp)
 
     # Health check endpoint
     @app.route('/health')

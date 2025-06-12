@@ -22,12 +22,15 @@ def require_auth(f: Callable) -> Callable:
             })
         )
 
-        # Get user data from token
-        user_data = client.auth.get_user(auth_header.split(' ')[1])
-        
-        # Check if user data is valid
-        if not user_data:
-            return jsonify({'error': 'Invalid token'}), 401
+        try:
+            # Get user data from token
+            user_data = client.auth.get_user(auth_header.split(' ')[1])
+
+            # Check if user data is valid
+            if not user_data:
+                return jsonify({'error': 'Invalid token'}), 401
+        except Exception as e:
+            return jsonify({'error': str(e)}), 401
         
         # Store Supabase client in Flask's g object for route handlers
         g.supabase = client
