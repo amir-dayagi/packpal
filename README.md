@@ -17,9 +17,9 @@ PackPal is a full-stack web app that helps users effortlessly create and manage 
 ## 🛠️ Tech Stack
 
 - **Frontend**: Next.js, Tailwind CSS  
-- **Backend**: Flask, Supabase, Google Gemini API  
+- **Backend**: Flask, Supabase  
 - **Database**: Supabase (PostgreSQL)  
-- **AI**: Google Gemini (for AI suggestions)
+- **AI**: LangGraph with Google Gemini Model
 
 ---
 
