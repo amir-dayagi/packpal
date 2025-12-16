@@ -93,7 +93,7 @@ npm install
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=<your-supabase-project-url>
 NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
-NEXT_PUBLIC_API_URL=http://localhost:5000
+NEXT_PUBLIC_API_URL=http://127.0.0.1:5000
 ```
 
 **5.** Start the development server:
