@@ -8,7 +8,7 @@ from assistant.models.state import State
 from assistant.models.chat import ChatMessage
 
 def create_chatbot_node(tools: List[Tool]):
-    llm = init_chat_model(os.environ["GOOGLE_GENAI_API_KEY"])
+    llm = init_chat_model("google_genai:gemini-2.0-flash")
 
     llm_with_tools = llm.bind_tools(tools)
 
