@@ -49,14 +49,16 @@ cd packpal
 cd backend
 ```
 
-**2.** Create and activate the Conda environment:
+**2.** Install [Conda](https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html) (skip this step if you have conda installed)
+
+**3.** Create and activate the Conda environment:
 
 ```bash
 conda env create -f environment.yml
 conda activate packpal-backend
 ```
 
-**3.** Create a `.env` file in the `backend/` directory with the following content:
+**4.** Create a `.env` file in the `backend/` directory with the following content:
 
 ```bash
 SUPABASE_URL=<your-supabase-project-url>
@@ -65,7 +67,7 @@ GOOGLE_API_KEY=<get from https://makersuite.google.com/app/apikey>
 CHECKPOINTER_DB_URI=<your-supabase-direct-connection-uri>
 ```
 
-**4.** Run the Flask backend:
+**5.** Run the Flask backend:
 
 ```bash
 flask run
@@ -78,13 +80,15 @@ flask run
 cd ../frontend
 ```
 
-**2.** Install dependencies:
+**2.** Install [Node.JS with npm](https://nodejs.org/en/download) (skip this if you have node installed already and/or use a different package manager)
+
+**3.** Install dependencies:
 
 ```bash
 npm install
 ```
 
-**3.** Create a `.env` file in the `frontend/` directory with the following content:
+**4.** Create a `.env` file in the `frontend/` directory with the following content:
 
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=<your-supabase-project-url>
@@ -92,7 +96,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
 NEXT_PUBLIC_API_URL=http://localhost:5000
 ```
 
-**4.** Start the development server:
+**5.** Start the development server:
 
 ```bash
 npm run dev
