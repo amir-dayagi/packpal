@@ -6,14 +6,14 @@ import { LoginState, SignupState } from "../types/auth";
 
 interface AuthContextType {
   session: string | null;
-  login: (state: LoginState, formData: FormData) => Promise<LoginState>;
-  signup: (state: SignupState, formData: FormData) => Promise<SignupState>;
+  login: (state: LoginState) => Promise<LoginState>;
+  signup: (state: SignupState) => Promise<SignupState>;
   logout: () => Promise<void>;
 }
 
 const Context = createContext<AuthContextType | null>(null);
 
-const Provider = ({ children }: { children: React.ReactNode }) => {
+const Provider = ({ children }) => {
   const router = useRouter();
   const supabase = createClient();
   const [session, setSession] = useState<string | null>(null);
@@ -53,10 +53,6 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
             }
         }
         router.replace("/");
-        return {
-            email: data.email,
-            password: data.password,
-        };
   };
 
   const signup = async (state: SignupState, formData: FormData): Promise<SignupState> => {
@@ -90,11 +86,6 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
     }
     
     router.replace("/login");
-    return {
-        email: data.email,
-        password: data.password,
-        confirmPassword: data.confirmPassword,
-    };
   }
 
   const logout = async () => {

@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { formatDate } from '../utils/date'
-import { Trip } from '../types/trip'
+import Trip from '../types/trip'
 import { useAuth } from '../contexts/auth'
 import { useState } from 'react'
 import DeleteConfirmationModal from './DeleteConfirmationModal'
