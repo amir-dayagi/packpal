@@ -7,18 +7,12 @@ import { useAuth } from "../contexts/auth";
 
 export default function Signup() {
     const { signup } = useAuth();
-    const action = async (prevState: SignupState, formData: FormData) => {
-        return await signup(prevState, formData);
-    };
-    const [state, formAction, isPending] = useActionState<SignupState>(
-        action as (prevState: SignupState) => Promise<SignupState>,
-        {
-            email: "",
-            password: "",
-            confirmPassword: "",
-            error: "",
-        }
-    );
+    const [state, formAction, isPending] = useActionState<SignupState>(signup, {
+        email: "",
+        password: "",
+        confirmPassword: "",
+        error: "",
+    });
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">

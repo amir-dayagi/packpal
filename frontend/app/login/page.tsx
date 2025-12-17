@@ -4,21 +4,14 @@ import Link from "next/link";
 // import { login } from "../actions/auth";
 import { useAuth } from "../contexts/auth";
 import { useActionState } from "react";
-import { LoginState } from "../types/auth";
 
 export default function Login() {
     const { login } = useAuth();
-    const action = async (prevState: LoginState, formData: FormData) => {
-        return await login(prevState, formData);
-    };
-    const [state, formAction, isPending] = useActionState<LoginState>(
-        action as (prevState: LoginState) => Promise<LoginState>,
-        {
-            email: "",
-            password: "",
-            error: "",
-        }
-    );
+    const [state, formAction, isPending] = useActionState(login, {
+        email: "",
+        password: "",
+        error: "",
+    });
 
     return (
         <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8">
