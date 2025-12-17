@@ -1,6 +1,8 @@
 "use client"
 
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+
+export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { Trip, TripRequest } from '../types/trip'
 import { useAuth } from '../contexts/auth'
@@ -39,8 +41,8 @@ export default function HomePage() {
         onMutate: async (tripId: number) => {
             await queryClient.cancelQueries({ queryKey: ['trips', session] })
             const previousTrips = queryClient.getQueryData(['trips', session])
-            queryClient.setQueryData(['trips', session], (old: { trips: Trip[] }) => ({
-                trips: old.trips.filter((trip) => trip.id !== tripId)
+            queryClient.setQueryData(['trips', session], (old: { trips: Trip[] } | undefined) => ({
+                trips: (old?.trips || []).filter((trip) => trip.id !== tripId)
             }))
             return { previousTrips }
         },
@@ -75,8 +77,8 @@ export default function HomePage() {
         onMutate: async (trip: TripRequest) => {
             await queryClient.cancelQueries({ queryKey: ['trips', session] })
             const previousTrips = queryClient.getQueryData(['trips', session])
-            queryClient.setQueryData(['trips', session], (old: { trips: Trip[] }) => ({
-                trips: [...old.trips, { id: Date.now(), ...trip, created_at: new Date().toISOString() }]
+            queryClient.setQueryData(['trips', session], (old: { trips: Trip[] } | undefined) => ({
+                trips: [...(old?.trips || []), { id: Date.now(), ...trip, created_at: new Date().toISOString() }]
             }))
             return { previousTrips }
         },
@@ -114,7 +116,7 @@ export default function HomePage() {
                     </div>
 
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {tripsData?.trips.map((trip) => (
+                        {(tripsData?.trips || []).map((trip) => (
                             <TripCard 
                                 key={trip.id} 
                                 trip={trip} 
@@ -123,7 +125,7 @@ export default function HomePage() {
                         ))}
                     </div>
 
-                    {tripsData?.trips.length === 0 && (
+                    {tripsData?.trips && tripsData.trips.length === 0 && (
                         <div className="text-center py-12 text-secondary">
                             <p className="text-lg">You haven't created any trips yet.</p>
                             <p className="mt-2">Click the + button to create your first trip!</p>
