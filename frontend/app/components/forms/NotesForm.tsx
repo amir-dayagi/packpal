@@ -9,7 +9,7 @@ interface NotesFormProps {
 }
 
 export default function NotesForm({ onSubmit, onCancel, initialNotes = '' }: NotesFormProps) {
-    const [notes, setNotes] = useState(initialNotes)
+    const [notes, setNotes] = useState(initialNotes || '')
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault()

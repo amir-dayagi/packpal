@@ -186,7 +186,7 @@ export default function TripPage() {
             })
         ),
         onSuccess: () => {
-            router.push('/')
+            router.push('/trips')
         },
         onError: (error) => {
             console.error('Error deleting trip:', error)
@@ -194,23 +194,36 @@ export default function TripPage() {
     })
 
     return (
-        <div className="min-h-screen p-8">
-            <div className="max-w-3xl mx-auto">
-                <div className="mb-8">
+        <div className="min-h-screen bg-gradient-to-br from-background via-background to-tertiary/20">
+            <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                {/* Trip Header Card */}
+                <div className="bg-background/80 backdrop-blur-sm rounded-2xl border border-tertiary/50 shadow-lg p-8 mb-8">
                     <div className="flex items-start justify-between">
-                        <div>
-                            <h1 className="text-3xl font-bold">{tripData.trip.name}</h1>
-                            <p className="text-secondary mt-2">
-                                {formatDate(tripData.trip.start_date)} - {formatDate(tripData.trip.end_date)}
-                            </p>
+                        <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary-hover/20 flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6 text-primary">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h1 className="text-3xl font-bold text-foreground">{tripData.trip.name}</h1>
+                                    <div className="flex items-center gap-2 mt-2 text-sm text-secondary">
+                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-9-9h.008v.008H12V9.75z" />
+                                        </svg>
+                                        <span>{formatDate(tripData.trip.start_date)} - {formatDate(tripData.trip.end_date)}</span>
+                                    </div>
+                                </div>
+                            </div>
                             {tripData.trip.description && (
-                                <p className="mt-4 text-secondary">{tripData.trip.description}</p>
+                                <p className="text-secondary leading-relaxed">{tripData.trip.description}</p>
                             )}
                         </div>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 ml-4">
                             <button
                                 onClick={() => setIsEditTripModalOpen(true)}
-                                className="p-2 text-secondary hover:cursor-pointer hover:text-secondary-hover transition-colors"
+                                className="p-2.5 rounded-xl text-secondary hover:text-foreground hover:bg-tertiary/50 transition-all duration-200"
                                 aria-label="Edit trip"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -219,7 +232,7 @@ export default function TripPage() {
                             </button>
                             <button
                                 onClick={() => setIsDeleteTripConfirmOpen(true)}
-                                className="p-2 text-secondary hover:cursor-pointer hover:text-red-500 transition-colors"
+                                className="p-2.5 rounded-xl text-secondary hover:text-red-600 hover:bg-red-50/50 transition-all duration-200"
                                 aria-label="Delete trip"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
@@ -230,69 +243,103 @@ export default function TripPage() {
                     </div>
                 </div>
 
-                <div className="space-y-8">
-                    <section>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-semibold">Packing List</h2>
-                            <div className="flex gap-2">
+                {/* Packing List Section */}
+                <section className="bg-background/80 backdrop-blur-sm rounded-2xl border border-tertiary/50 shadow-lg p-8">
+                    <div className="flex items-center justify-between mb-6">
+                        <div>
+                            <h2 className="text-2xl font-semibold text-foreground">Packing List</h2>
+                            <p className="text-sm text-secondary mt-1">
+                                {packingListData?.packing_list.length || 0} {packingListData?.packing_list.length === 1 ? 'item' : 'items'}
+                            </p>
+                        </div>
+                        {packingListData?.packing_list.length && packingListData?.packing_list.length > 0 ?
+                        (
+                            <div className="flex gap-3">
                                 <button
                                     onClick={() => router.push(`/assistant?tripId=${tripId}`)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
                                     </svg>
-                                    Refine with AI
+                                    <span>Refine with AI</span>
                                 </button>
                                 <button
                                     onClick={() => setIsCreateItemModalOpen(true)}
-                                    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-hover transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                                     </svg>
-                                    Add Item
+                                    <span>Add Item</span>
+                                </button>
+                            </div>        
+                        ) : null}
+                        
+                    </div>
+                    <div className="space-y-3">
+                        {packingListData?.packing_list.length === 0 ? (
+                            <div className="text-center py-16">
+                                <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-primary-hover/20 mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 text-primary">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125z" />
+                                    </svg>
+                                </div>
+                                <p className="text-lg font-medium text-foreground mb-2">No items yet</p>
+                                <p className="text-secondary mb-6">Start building your packing list by adding items</p>
+                                <button
+                                    onClick={() => setIsCreateItemModalOpen(true)}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                    </svg>
+                                    <span>Add Your First Item</span>
+                                </button>
+                                <br />
+                                <br />
+                                <button
+                                    onClick={() => router.push(`/assistant?tripId=${tripId}`)}
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                                    </svg>
+                                    <span>Or Use AI To Help You Pack (Recommended)</span>
                                 </button>
                             </div>
-                        </div>
-                        <div className="space-y-2">
-                            {packingListData?.packing_list.length === 0 ? (
-                                <p className="text-secondary text-center py-8">
-                                    No items in your packing list yet.
-                                </p>
-                            ) : (
-                                packingListData?.packing_list.map((item) => (
-                                    <PackingListItem
-                                        key={item.id}
-                                        item={item}
-                                        onQuantityUpdate={(quantity) => 
-                                            updateItem.mutate({ id: item.id, quantity })
-                                        }
-                                        onTogglePacked={() => 
-                                            updateItem.mutate({ 
-                                                id: item.id, 
-                                                is_packed: !item.is_packed 
-                                            })
-                                        }
-                                        onToggleReturning={() => 
-                                            updateItem.mutate({ 
-                                                id: item.id, 
-                                                is_returning: !item.is_returning 
-                                            })
-                                        }
-                                        onDelete={() => setItemToDelete(item)}
-                                        onNotesUpdate={(notes) => 
-                                            updateItem.mutate({ id: item.id, notes })
-                                        }
-                                        onNameUpdate={(name) =>
-                                            updateItem.mutate({ id: item.id, name })
-                                        }
-                                    />
-                                ))
-                            )}
-                        </div>
-                    </section>
-                </div>
+                        ) : (
+                            packingListData?.packing_list.map((item) => (
+                                <PackingListItem
+                                    key={item.id}
+                                    item={item}
+                                    onQuantityUpdate={(quantity) => 
+                                        updateItem.mutate({ id: item.id, quantity })
+                                    }
+                                    onTogglePacked={() => 
+                                        updateItem.mutate({ 
+                                            id: item.id, 
+                                            is_packed: !item.is_packed 
+                                        })
+                                    }
+                                    onToggleReturning={() => 
+                                        updateItem.mutate({ 
+                                            id: item.id, 
+                                            is_returning: !item.is_returning 
+                                        })
+                                    }
+                                    onDelete={() => setItemToDelete(item)}
+                                    onNotesUpdate={(notes) => 
+                                        updateItem.mutate({ id: item.id, notes })
+                                    }
+                                    onNameUpdate={(name) =>
+                                        updateItem.mutate({ id: item.id, name })
+                                    }
+                                />
+                            ))
+                        )}
+                    </div>
+                </section>
             </div>
 
             <Modal isOpen={isCreateItemModalOpen} onClose={() => setIsCreateItemModalOpen(false)} title="Add Item">
