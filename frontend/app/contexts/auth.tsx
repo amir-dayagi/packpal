@@ -1,8 +1,8 @@
 import React from "react";
 import { createContext, useState, useEffect, useContext } from "react";
-import { createClient } from "../utils/supabase/client";
+import { createClient } from "@/app/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { LoginState, SignupState } from "../types/auth";
+import { LoginState, SignupState } from "@/app/types/auth";
 
 interface AuthContextType {
   session: string | null;
@@ -31,7 +31,7 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
             setSession(session?.access_token ?? null);
         } else if (event === "SIGNED_OUT") {
             setSession(null);
-            router.replace("/login");
+            router.replace("/");
         }
     });
   }, []);
@@ -52,7 +52,7 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
                 error: error.message,
             }
         }
-        router.replace("/");
+        router.replace("/trips");
         return {
             email: data.email,
             password: data.password,
@@ -100,7 +100,7 @@ const Provider = ({ children }: { children: React.ReactNode }) => {
   const logout = async () => {
     await supabase.auth.signOut();
     setSession(null);
-    router.replace("/login");
+    router.replace("/");
   };
 
   const exposed: AuthContextType = {

@@ -1,21 +1,23 @@
 "use client"
 
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-
-export const dynamic = 'force-dynamic'
 import { useState } from 'react'
-import { Trip, TripRequest } from '../types/trip'
-import { useAuth } from '../contexts/auth'
-import Modal from '../components/Modal'
-import CreateTripForm from '../components/forms/CreateTripForm'
-import TripCard from '../components/TripCard'
+import { Trip, TripRequest } from '@/app/types/trip'
+import { useAuth } from '@/app/contexts/auth'
+import Modal from '@/app/components/Modal'
 import { useRouter } from 'next/navigation'
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal'
+import HeaderSection from './HeaderSection'
+import TripsGrid from './TripsGrid'
+import CreateTripForm from './CreateTripForm'
 
-export default function HomePage() {
-    const { session } = useAuth()
-    const queryClient = useQueryClient()
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const router = useRouter()
+
+export default function TripsPage() {
+    const { session } = useAuth();
+    const queryClient = useQueryClient();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [tripToDelete, setTripToDelete] = useState<Trip|undefined>(undefined);
+    const router = useRouter();
 
     const { data: tripsData } = useSuspenseQuery<{ trips: Trip[] }>({
         queryKey: ['trips', session],
@@ -95,55 +97,53 @@ export default function HomePage() {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['trips', session] })
-            setIsModalOpen(false)
+            setIsCreateModalOpen(false)
         }
     })
 
     return (
         <>
-            <div className="min-h-screen p-8">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex justify-end mb-4">
-                        <button 
-                            onClick={() => setIsModalOpen(true)}
-                            className="w-10 h-10 rounded-full bg-primary text-background flex items-center justify-center hover:cursor-pointer hover:bg-primary-hover transition-colors"
-                            aria-label="Create new trip"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                        </button>
-                    </div>
+            {/* Main Trips Page */}
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-tertiary">
+                <div className="px-4 sm:px-6 lg:px-8 py-12">
+                    <HeaderSection 
+                        newTripAction={() => setIsCreateModalOpen(true)}
+                        tripCount={tripsData?.trips && tripsData.trips.length}
+                    />
 
-                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                        {(tripsData?.trips || []).map((trip) => (
-                            <TripCard 
-                                key={trip.id} 
-                                trip={trip} 
-                                onDelete={() => deleteTrip.mutate(trip.id)} 
-                            />
-                        ))}
-                    </div>
-
-                    {tripsData?.trips && tripsData.trips.length === 0 && (
-                        <div className="text-center py-12 text-secondary">
-                            <p className="text-lg">You haven't created any trips yet.</p>
-                            <p className="mt-2">Click the + button to create your first trip!</p>
-                        </div>
-                    )}
+                    <TripsGrid 
+                        trips={tripsData?.trips}
+                        onTripCreate={() => setIsCreateModalOpen(true)}
+                        setTripToDelete={setTripToDelete}
+                    />
                 </div>
             </div>
 
+            {/* Create Trip Modal */}
             <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
                 title="Create New Trip"
             >
                 <CreateTripForm 
-                    onClose={() => setIsModalOpen(false)} 
+                    onClose={() => setIsCreateModalOpen(false)} 
                     onCreate={createTrip.mutate}
                 />
             </Modal>
+
+            {/* Delete Trip Modal */}
+            <DeleteConfirmationModal
+                isOpen={tripToDelete !== undefined}
+                onClose={() => setTripToDelete(undefined)}
+                onConfirm={() => {
+                    deleteTrip.mutate(tripToDelete!.id);
+                    setTripToDelete(undefined);
+                }}
+                message={`Are you sure you want to delete "${tripToDelete?.name}"? This will permanently delete all items in this trip and cannot be undone.`}
+                itemName="trip"
+            />
+            
         </>
     )
 }
+

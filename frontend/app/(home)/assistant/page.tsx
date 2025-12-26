@@ -1,15 +1,16 @@
 'use client';
 
 import { AssistantChatMessage, AssistantStartChatResponse, AssistantStreamedData } from '@/app/types/assistant';
-import { useEffect, useState, useRef, Suspense } from 'react';
-import { useAuth } from '../../contexts/auth'
+import { useEffect, useState } from 'react';
+import { useAuth } from '@/app/contexts/auth'
 import { Trip } from '@/app/types/trip';
 import { Item } from '@/app/types/item';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Modal from '@/app/components/Modal';
 import Loading from '@/app/loading';    
-import EditableTripPage from '@/app/components/EditableTripPage';
-import AssistantChat from '@/app/components/AssistantChat';
+import HeaderSection from './HeaderSection';
+import SplitView from './SplitView';
+import useSplitView from '@/app/hooks/useSplitView';
 
 export default function AssistantPage() {
     const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -69,6 +70,8 @@ export default function AssistantPage() {
         }
         setIsLoading(false);
     }, [session, tripId]);
+
+    const { splitPercent, containerRef, startDragging } = useSplitView(55);
 
     
     function callAssistant(userMessage: string) {
@@ -166,34 +169,30 @@ export default function AssistantPage() {
     }
 
     return (
-        <div className='flex min-h-screen max-h-screen overflow-hidden'>
-            <EditableTripPage
-                className="flex-2"
-                trip={editedTrip!}
-                packingList={editedPackingList}
-                onCancel={() => setIsCancelModal(true)}
-                onConfirm={() => setIsConfirmModal(true)}
-                onRenameTrip={(newName) => setEditedTrip(prev => prev ? { ...prev, name: newName } : null)}
-                onUpdateTripDates={(newDates) => setEditedTrip(prev => prev ? { ...prev, start_date: newDates.start_date, end_date: newDates.end_date } : null)}
-                onUpdateTripDescription={(newDescription) => setEditedTrip(prev => prev ? { ...prev, description: newDescription } : null)}
-                onAddItem={(newItem) => setEditedPackingList(prev => [...prev, newItem])}
-                onUpdateItemQuantity={(itemName, newQuantity) => setEditedPackingList(prev => prev.map(item => item.name === itemName ? { ...item, quantity: newQuantity } : item))}
-                onUpdateItemNotes={(itemName, newNotes) => setEditedPackingList(prev => prev.map(item => item.name === itemName ? { ...item, notes: newNotes } : item))}
-                onRenameItem={(itemName, newName) => setEditedPackingList(prev => prev.map(item => item.name === itemName ? { ...item, name: newName } : item))}
-                onDeleteItem={(itemName) => setEditedPackingList(prev => prev.filter(item => item.name !== itemName))}
-            />
-            
+        <div className="h-screen w-screen overflow-hidden bg-gradient-to-br from-background via-background to-tertiary/20">
+            <div className="h-full w-full px-4 sm:px-6 lg:px-8 py-4 flex flex-col gap-4">
+                {/* Header */}
+                <HeaderSection editedTrip={editedTrip} />
 
-            <AssistantChat
-                className="flex-1"
-                messages={chatMessages}
-                isStreaming={isStreaming}
-                onSendMessage={(message) => {
-                    setChatMessages(prev => [...(prev || []), { role: 'user', content: message }]);
-                    callAssistant(message);
-                }}
-            />
-            
+                {/* Split view container */}
+                <SplitView
+                    containerRef={containerRef}
+                    splitPercent={splitPercent}
+                    editedTrip={editedTrip}
+                    editedPackingList={editedPackingList}
+                    setIsCancelModal={setIsCancelModal}
+                    setIsConfirmModal={setIsConfirmModal}
+                    setEditedTrip={setEditedTrip}
+                    setEditedPackingList={setEditedPackingList}
+                    chatMessages={chatMessages}
+                    isStreaming={isStreaming}
+                    setChatMessages={setChatMessages}
+                    callAssistant={callAssistant}
+                    startDragging={startDragging}
+                />
+            </div>
+
+            {/* Cancel Modal */}
             <Modal isOpen={isCancelModal} onClose={() => setIsCancelModal(false)} title="Cancel Edits?">
                 <div className="space-y-4">
                     <p className="text-secondary">
@@ -216,6 +215,7 @@ export default function AssistantPage() {
                 </div>
             </Modal>
 
+            {/* Confirm Modal */}
             <Modal isOpen={isConfirmModal} onClose={() => setIsConfirmModal(false)} title="Confirm Edits?">
                 <div className="space-y-4">
                     <p className="text-secondary">

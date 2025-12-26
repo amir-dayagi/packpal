@@ -31,14 +31,21 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser()
 
-  if (
-    !user &&
-    !request.nextUrl.pathname.startsWith('/login') &&
-    !request.nextUrl.pathname.startsWith('/signup')
-  ) {
-    // no user, redirect to login page
+  // Allow access to landing page, login, and signup without authentication
+  const publicPaths = ['/', '/login', '/signup']
+  const isPublicPath = publicPaths.includes(request.nextUrl.pathname)
+
+  if (!user && !isPublicPath) {
+    // no user, redirect to landing page
     const url = request.nextUrl.clone()
-    url.pathname = '/login'
+    url.pathname = '/'
+    return NextResponse.redirect(url)
+  }
+
+  // Redirect authenticated users away from login/signup to trips
+  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
+    const url = request.nextUrl.clone()
+    url.pathname = '/trips'
     return NextResponse.redirect(url)
   }
 
