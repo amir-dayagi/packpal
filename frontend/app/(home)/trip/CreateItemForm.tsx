@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { ItemRequest } from '../../types/item'
+import { ItemRequest } from '@/app/types/item'
 
 interface CreateItemFormProps {
     onSubmit: (item: ItemRequest) => void

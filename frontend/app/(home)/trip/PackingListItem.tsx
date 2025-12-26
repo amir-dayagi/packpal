@@ -1,5 +1,7 @@
+'use client'
+
 import { useState, useRef, useEffect } from 'react'
-import { Item } from '../types/item'
+import { Item } from '@/app/types/item'
 
 interface PackingListItemProps {
     item: Item

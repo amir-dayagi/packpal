@@ -1,32 +1,30 @@
 'use client'
 
 import { useState } from 'react'
-import { TripRequest } from '../../types/trip'
+import { Trip, TripRequest } from '@/app/types/trip';
 
-interface CreateTripFormProps {
-    onClose: () => void;
-    onCreate: (trip: TripRequest) => void;
-}
 
-export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProps) {
-    const [name, setName] = useState('');
-    const [description, setDescription] = useState('');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+interface EditTripFormProps {
+    onSubmit: (trip: TripRequest) => void
+    onCancel: () => void
+    initialData?: Trip
+};
+
+export default function EditTripForm({ onSubmit, onCancel, initialData }: EditTripFormProps) {
+    const [name, setName] = useState(initialData?.name || '');
+    const [description, setDescription] = useState(initialData?.description || '');
+    const [startDate, setStartDate] = useState(initialData?.start_date.split('T')[0] || '');
+    const [endDate, setEndDate] = useState(initialData?.end_date.split('T')[0] || '');
 
     const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        onCreate({
+        e.preventDefault()
+        onSubmit({
             name,
-            description: description || undefined,
+            description: description || "",
             start_date: startDate,
             end_date: endDate
-        });
-        setIsLoading(false);
-        onClose();
-    }
+        })
+    };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
@@ -43,19 +41,18 @@ export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProp
                     <input
                         type="text"
                         id="name"
-                        name="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        required
                         className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border placeholder:text-secondary text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
-                        placeholder="Summer Vacation 2024"
+                        placeholder="Where are you going?"
+                        required
                     />
                 </div>
             </div>
 
             <div>
                 <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                    Description
+                    Description <span className="text-secondary text-xs font-normal">(Optional)</span>
                 </label>
                 <div className="relative">
                     <div className="absolute top-4 left-4 pointer-events-none">
@@ -65,19 +62,18 @@ export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProp
                     </div>
                     <textarea
                         id="description"
-                        name="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={3}
                         className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border placeholder:text-secondary text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none resize-none"
-                        placeholder="A brief description of your trip..."
+                        placeholder="Add any notes about your trip..."
                     />
                 </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="startDate" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
                         Start Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -88,17 +84,18 @@ export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProp
                         </div>
                         <input
                             type="date"
-                            id="startDate"
-                            name="startDate"
+                            id="start_date"
                             value={startDate}
+                            min={new Date().toJSON().slice(0, 10)}
                             onChange={(e) => setStartDate(e.target.value)}
-                            required
                             className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
+                            required
                         />
                     </div>
                 </div>
+
                 <div>
-                    <label htmlFor="endDate" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
                         End Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -109,13 +106,12 @@ export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProp
                         </div>
                         <input
                             type="date"
-                            id="endDate"
-                            name="endDate"
+                            id="end_date"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             min={startDate}
-                            required
                             className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
+                            required
                         />
                     </div>
                 </div>
@@ -124,29 +120,18 @@ export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProp
             <div className="flex justify-end gap-3 pt-4 border-t border-tertiary/50">
                 <button
                     type="button"
-                    onClick={onClose}
+                    onClick={onCancel}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-secondary hover:text-foreground hover:bg-tertiary/50 transition-colors duration-200"
                 >
                     Cancel
                 </button>
                 <button
                     type="submit"
-                    disabled={isLoading}
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:transform-none"
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105 active:scale-95"
                 >
-                    {isLoading ? (
-                        <span className="flex items-center gap-2">
-                            <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            Creating...
-                        </span>
-                    ) : (
-                        'Create Trip'
-                    )}
+                    {initialData ? 'Save Changes' : 'Create Trip'}
                 </button>
             </div>
         </form>
-    )
+    );
 } 

@@ -1,8 +1,8 @@
 import React from "react";
 import { createContext, useState, useEffect, useContext } from "react";
-import { createClient } from "../utils/supabase/client";
+import { createClient } from "@/app/utils/supabase/client";
 import { useRouter } from "next/navigation";
-import { LoginState, SignupState } from "../types/auth";
+import { LoginState, SignupState } from "@/app/types/auth";
 
 interface AuthContextType {
   session: string | null;

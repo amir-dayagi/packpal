@@ -3,14 +3,14 @@ import { useEffect } from "react";
 import { useState } from "react";
 import { useRef } from "react";
 
-interface AssistantChatProps {
+interface ChatPageProps {
     className: string
     messages: AssistantChatMessage[];
     isStreaming: boolean;
     onSendMessage: (message: string) => void;
 }
 
-// Presentational component: renders the list of chat messages and streaming indicator.
+
 function ChatMessageList({
     messages,
     isStreaming,
@@ -45,7 +45,7 @@ function ChatMessageList({
                                     <div className="flex-shrink-0 mt-1">
                                         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold ${
                                             isUser 
-                                                ? 'bg-primary text-white' 
+                                                ? 'bg-primary text-foreground' 
                                                 : 'bg-tertiary text-secondary'
                                         }`}>
                                             {isUser ? 'You' : 'AI'}
@@ -60,7 +60,7 @@ function ChatMessageList({
                                                 : 'bg-tertiary rounded-tl-sm'
                                         }`}
                                     >
-                                        <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
+                                        <p className="whitespace-pre-wrap text-foreground text-sm leading-relaxed">{message.content}</p>
                                     </div>
                                 </div>
                             )
@@ -89,7 +89,7 @@ function ChatMessageList({
     );
 }
 
-// Presentational component: renders the chat input area and send button.
+
 function ChatInput({
     userMessage,
     isStreaming,
@@ -112,7 +112,7 @@ function ChatInput({
                     onChange={(e) => onChange(e.target.value)}
                     onKeyDown={onKeyDown}
                     placeholder="Ask PackPal to add, adjust, or remove items..."
-                    className="flex-1 bg-tertiary rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary"
+                    className="flex-1 bg-tertiary rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary text-foreground"
                     disabled={isStreaming}
                 />
                 <button 
@@ -130,7 +130,7 @@ function ChatInput({
     );
 }
 
-export default function AssistantChat({ className, messages, isStreaming, onSendMessage }: AssistantChatProps) {
+export default function ChatPage({ className, messages, isStreaming, onSendMessage }: ChatPageProps) {
     const [userMessage, setUserMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement | null>(null);
 

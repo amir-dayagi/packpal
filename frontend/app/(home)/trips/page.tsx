@@ -1,21 +1,23 @@
 "use client"
 
 import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-
-export const dynamic = 'force-dynamic'
 import { useState } from 'react'
-import { Trip, TripRequest } from '../../types/trip'
-import { useAuth } from '../../contexts/auth'
-import Modal from '../../components/Modal'
-import CreateTripForm from '../../components/forms/CreateTripForm'
-import TripCard from '../../components/TripCard'
+import { Trip, TripRequest } from '@/app/types/trip'
+import { useAuth } from '@/app/contexts/auth'
+import Modal from '@/app/components/Modal'
 import { useRouter } from 'next/navigation'
+import DeleteConfirmationModal from '@/app/components/DeleteConfirmationModal'
+import HeaderSection from './HeaderSection'
+import TripsGrid from './TripsGrid'
+import CreateTripForm from './CreateTripForm'
+
 
 export default function TripsPage() {
-    const { session } = useAuth()
-    const queryClient = useQueryClient()
-    const [isModalOpen, setIsModalOpen] = useState(false)
-    const router = useRouter()
+    const { session } = useAuth();
+    const queryClient = useQueryClient();
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [tripToDelete, setTripToDelete] = useState<Trip|undefined>(undefined);
+    const router = useRouter();
 
     const { data: tripsData } = useSuspenseQuery<{ trips: Trip[] }>({
         queryKey: ['trips', session],
@@ -95,83 +97,52 @@ export default function TripsPage() {
         },
         onSettled: () => {
             queryClient.invalidateQueries({ queryKey: ['trips', session] })
-            setIsModalOpen(false)
+            setIsCreateModalOpen(false)
         }
     })
 
     return (
         <>
-            <div className="min-h-screen bg-gradient-to-br from-background via-background to-tertiary/20">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                    {/* Header Section */}
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-10">
-                        <div>
-                            <h1 className="text-4xl font-bold text-foreground mb-2">My Trips</h1>
-                            <p className="text-secondary">
-                                {tripsData?.trips && tripsData.trips.length > 0 
-                                    ? `${tripsData.trips.length} ${tripsData.trips.length === 1 ? 'trip' : 'trips'} planned`
-                                    : 'Plan your next adventure'
-                                }
-                            </p>
-                        </div>
-                        <button 
-                            onClick={() => setIsModalOpen(true)}
-                            className="mt-4 sm:mt-0 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105 active:scale-95"
-                            aria-label="Create new trip"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                            <span>New Trip</span>
-                        </button>
-                    </div>
+            {/* Main Trips Page */}
+            <div className="min-h-screen bg-gradient-to-br from-background via-background to-tertiary">
+                <div className="px-4 sm:px-6 lg:px-8 py-12">
+                    <HeaderSection 
+                        newTripAction={() => setIsCreateModalOpen(true)}
+                        tripCount={tripsData?.trips && tripsData.trips.length}
+                    />
 
-                    {/* Trips Grid */}
-                    {tripsData?.trips && tripsData.trips.length > 0 ? (
-                        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                            {tripsData.trips.map((trip) => (
-                                <TripCard 
-                                    key={trip.id} 
-                                    trip={trip} 
-                                    onDelete={() => deleteTrip.mutate(trip.id)} 
-                                />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="bg-background/80 backdrop-blur-sm rounded-2xl border border-tertiary/50 shadow-lg p-16 text-center">
-                            <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/20 to-primary-hover/20 mb-6">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-10 h-10 text-primary">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-                                </svg>
-                            </div>
-                            <h3 className="text-2xl font-semibold text-foreground mb-2">No trips yet</h3>
-                            <p className="text-secondary mb-6 max-w-md mx-auto">
-                                Start planning your next adventure by creating your first trip. PackPal will help you organize everything you need.
-                            </p>
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-primary to-primary-hover px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105"
-                            >
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                                </svg>
-                                <span>Create Your First Trip</span>
-                            </button>
-                        </div>
-                    )}
+                    <TripsGrid 
+                        trips={tripsData?.trips}
+                        onTripCreate={() => setIsCreateModalOpen(true)}
+                        setTripToDelete={setTripToDelete}
+                    />
                 </div>
             </div>
 
+            {/* Create Trip Modal */}
             <Modal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
+                isOpen={isCreateModalOpen}
+                onClose={() => setIsCreateModalOpen(false)}
                 title="Create New Trip"
             >
                 <CreateTripForm 
-                    onClose={() => setIsModalOpen(false)} 
+                    onClose={() => setIsCreateModalOpen(false)} 
                     onCreate={createTrip.mutate}
                 />
             </Modal>
+
+            {/* Delete Trip Modal */}
+            <DeleteConfirmationModal
+                isOpen={tripToDelete !== undefined}
+                onClose={() => setTripToDelete(undefined)}
+                onConfirm={() => {
+                    deleteTrip.mutate(tripToDelete!.id);
+                    setTripToDelete(undefined);
+                }}
+                message={`Are you sure you want to delete "${tripToDelete?.name}"? This will permanently delete all items in this trip and cannot be undone.`}
+                itemName="trip"
+            />
+            
         </>
     )
 }

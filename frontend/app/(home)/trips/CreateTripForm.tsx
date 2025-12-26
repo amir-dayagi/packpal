@@ -1,31 +1,35 @@
-import { useState } from 'react'
-import { Trip, TripRequest } from '@/app/types/trip';
+import GradientButton from "@/app/components/GradientButton";
+import { TripRequest } from "@/app/types/trip";
+import { useState } from "react";
 
-
-interface TripFormProps {
-    onSubmit: (trip: TripRequest) => void
-    onCancel: () => void
-    initialData?: Trip
+type CreateTripFormProps = {
+    onClose: () => void;
+    onCreate: (trip: TripRequest) => void;
 }
 
-export default function TripForm({ onSubmit, onCancel, initialData }: TripFormProps) {
-    const [name, setName] = useState(initialData?.name || '')
-    const [description, setDescription] = useState(initialData?.description || '')
-    const [startDate, setStartDate] = useState(initialData?.start_date.split('T')[0] || '')
-    const [endDate, setEndDate] = useState(initialData?.end_date.split('T')[0] || '')
+export default function CreateTripForm({ onClose, onCreate }: CreateTripFormProps) {
+    const [name, setName] = useState('');
+    const [description, setDescription] = useState('');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault()
-        onSubmit({
+        e.preventDefault();
+        setIsLoading(true);
+        onCreate({
             name,
-            description: description || "",
+            description: description || undefined,
             start_date: startDate,
             end_date: endDate
-        })
+        });
+        setIsLoading(false);
+        onClose();
     }
 
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
+            {/* Trip Name Input */}
             <div>
                 <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                     Trip Name <span className="text-red-500">*</span>
@@ -39,18 +43,20 @@ export default function TripForm({ onSubmit, onCancel, initialData }: TripFormPr
                     <input
                         type="text"
                         id="name"
+                        name="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border placeholder:text-secondary text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
-                        placeholder="Where are you going?"
                         required
+                        className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border placeholder:text-secondary text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
+                        placeholder="Summer Vacation 2024"
                     />
                 </div>
             </div>
 
+            {/* Description Input */}
             <div>
                 <label htmlFor="description" className="block text-sm font-medium text-foreground mb-2">
-                    Description <span className="text-secondary text-xs font-normal">(Optional)</span>
+                    Description
                 </label>
                 <div className="relative">
                     <div className="absolute top-4 left-4 pointer-events-none">
@@ -60,18 +66,20 @@ export default function TripForm({ onSubmit, onCancel, initialData }: TripFormPr
                     </div>
                     <textarea
                         id="description"
+                        name="description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         rows={3}
                         className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border placeholder:text-secondary text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none resize-none"
-                        placeholder="Add any notes about your trip..."
+                        placeholder="A brief description of your trip..."
                     />
                 </div>
             </div>
 
+            {/* Start and End Date Inputs */}
             <div className="grid grid-cols-2 gap-4">
                 <div>
-                    <label htmlFor="start_date" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="startDate" className="block text-sm font-medium text-foreground mb-2">
                         Start Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -82,17 +90,18 @@ export default function TripForm({ onSubmit, onCancel, initialData }: TripFormPr
                         </div>
                         <input
                             type="date"
-                            id="start_date"
+                            id="startDate"
+                            name="startDate"
                             value={startDate}
                             onChange={(e) => setStartDate(e.target.value)}
-                            className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
+                            min={new Date().toJSON().slice(0, 10)}
                             required
+                            className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
                         />
                     </div>
                 </div>
-
                 <div>
-                    <label htmlFor="end_date" className="block text-sm font-medium text-foreground mb-2">
+                    <label htmlFor="endDate" className="block text-sm font-medium text-foreground mb-2">
                         End Date <span className="text-red-500">*</span>
                     </label>
                     <div className="relative">
@@ -103,32 +112,34 @@ export default function TripForm({ onSubmit, onCancel, initialData }: TripFormPr
                         </div>
                         <input
                             type="date"
-                            id="end_date"
+                            id="endDate"
+                            name="endDate"
                             value={endDate}
                             onChange={(e) => setEndDate(e.target.value)}
                             min={startDate}
-                            className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
                             required
+                            className="block w-full pl-12 pr-4 py-3 rounded-xl border-0 bg-tertiary/50 ring-1 ring-inset ring-border text-foreground focus:ring-2 focus:ring-primary focus:bg-background transition-all duration-200 outline-none"
                         />
                     </div>
                 </div>
             </div>
 
+            {/* Cancel and Confirmation Buttons */}
             <div className="flex justify-end gap-3 pt-4 border-t border-tertiary/50">
                 <button
                     type="button"
-                    onClick={onCancel}
+                    onClick={onClose}
                     className="px-5 py-2.5 rounded-xl text-sm font-medium text-secondary hover:text-foreground hover:bg-tertiary/50 transition-colors duration-200"
                 >
                     Cancel
                 </button>
-                <button
+                <GradientButton
                     type="submit"
-                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-primary to-primary-hover text-sm font-semibold text-white shadow-lg shadow-primary/25 hover:shadow-xl hover:shadow-primary/30 transition-all duration-200 transform hover:scale-105 active:scale-95"
+                    loading={isLoading}
                 >
-                    {initialData ? 'Save Changes' : 'Create Trip'}
-                </button>
+                    Create Trip
+                </GradientButton>
             </div>
         </form>
-    )
-} 
+    );
+}

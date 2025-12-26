@@ -22,6 +22,7 @@ export default function DeleteConfirmationModal({
             title={`Delete ${itemName || 'Item'}`}
         >
             <div className="space-y-5">
+                {/* Delete Confirmation Message */}
                 <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 w-12 h-12 rounded-xl bg-red-50 flex items-center justify-center">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6 text-red-600">
@@ -32,6 +33,8 @@ export default function DeleteConfirmationModal({
                         {message}
                     </p>
                 </div>
+
+                {/* Cancel and Delete Buttons */}
                 <div className="flex justify-end gap-3 pt-4 border-t border-tertiary/50">
                     <button
                         onClick={onClose}
