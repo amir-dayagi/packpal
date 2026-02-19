@@ -4,7 +4,7 @@ FROM continuumio/miniconda3:latest
 # Set working directory
 WORKDIR /app
 
-# Copy environment file and create the conda environment
+# Copy environment file
 COPY environment.yml .
 
 # Create the environment and clean up caches
@@ -13,8 +13,8 @@ RUN conda env create -f environment.yml && \
 
 # Make sure conda is available and set the default environment
 # We set PATH so the env's python and binaries are used by default.
-ENV CONDA_DEFAULT_ENV=packpal-env
-ENV PATH=/opt/conda/envs/packpal-env/bin:$PATH
+ENV CONDA_DEFAULT_ENV=packpal
+ENV PATH=/opt/conda/envs/packpal/bin:$PATH
 
 # Copy the rest of the application code
 COPY . .

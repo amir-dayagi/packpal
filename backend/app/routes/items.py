@@ -1,281 +1,409 @@
-from flask import Blueprint, request, jsonify, g
-from typing import Dict, Any
-from pydantic import ValidationError
+from apiflask import APIBlueprint, abort
+from ..models.message_response import MessageResponse
+from ..utils.auth import auth
+from flask import g
+from ..models.item import CreateItemRequest, ItemOrigin, ItemResponse, PackedRequest, PackedRequest, UpdateItemRequest, ReturningRequest
 
-from app.utils.auth import require_auth
-from app.models.item import CreateItemRequest, UpdateItemRequest, Item
+bp = APIBlueprint('items', __name__, url_prefix='/items')
 
+@bp.get('/<item_id>')
+@auth.login_required
+@bp.output(ItemResponse, status_code=200)
+def get_item(item_id: str):
+    """Get a specific item for the current user"""
+    # Get user
+    user = auth.current_user
 
-bp = Blueprint('items', __name__, url_prefix='/items')
-
-@bp.route('', methods=['POST'])
-@require_auth
-def create_item(user_id: str) -> tuple[Dict[str, Any], int]:
-    """
-    Create a new item
-    
-    Headers:
-        Authorization: str. The token of the user
-
-    Body:
-        trip_id: str. The id of the trip the item belongs to
-        name: str. The name of the item
-        quantity: int. The quantity of the item
-        notes: (optional) str. The notes of the item 
-    
-    Returns:
-        item:
-            id: str. The id of the created item
-            user_id: str. The id of the user who created the item
-            trip_id: str. The id of the trip the item belongs to
-            created_at: datetime. The date and time the item was created
-            name: str. The name of the item
-            quantity: int. The quantity of the item
-            notes: (optional) str. The notes of the item 
-            is_packed: bool. Whether the item is packed
-            is_returning: bool. Whether the item is returning
-
-    Errors:
-        - 400: Invalid request body
-        - 404: Trip not found
-        - 403: User does not own the trip
-        - 500: Failed to create item
-    """    
-    # Get item request data
-    try:
-        item_request = CreateItemRequest(**request.get_json())
-    except ValidationError as e:
-        return jsonify({'error': str(e)}), 400
-    
-    # Get Supabase client
-    supabase_client = g.supabase
-    if not supabase_client:
-        return jsonify({'error': 'Supabase client not initialized'}), 500
-    
-    # Check if trip exists
-    trip = supabase_client\
-        .table('trips')\
-        .select('*') \
-        .eq('id', item_request.trip_id) \
-        .eq('user_id', user_id) \
-        .execute()
-    
-    if not trip.data:
-        return jsonify({'error': 'Trip not found'}), 404
-    
-    # Check if user owns the trip
-    if trip.data[0]['user_id'] != user_id:
-        return jsonify({'error': 'User does not own the trip'}), 403
-
-    # Create item
-    item = supabase_client\
-        .table('items')\
-        .insert({
-            'trip_id': item_request.trip_id,
-            'name': item_request.name,
-            'quantity': item_request.quantity,
-            'notes': item_request.notes
-        })\
-        .execute()
-
-    # Check if item was created
-    if not item.data:
-        return jsonify({'error': 'Failed to create item'}), 500
-    
-    # Assert item is valid
-    try:
-        item = Item.model_validate(item.data[0]).model_dump()
-    except ValidationError as e:
-        return jsonify({'error': str(e)}), 500
-    
-    # Return item
-    return jsonify({'item': item}), 201
-
-@bp.route('/<item_id>', methods=['GET'])
-@require_auth
-def get_item(user_id: str, item_id: str) -> tuple[Dict[str, Any], int]:
-    """
-    Get a specific item
-    
-    Headers:
-        Authorization: str. The token of the user
-
-    Args:
-        item_id: str. The id of the item
-    
-    Returns:
-        item:
-            id: str. The id of the item
-            user_id: str. The id of the user who created the item
-            trip_id: str. The id of the trip the item belongs to
-            created_at: datetime. The date and time the item was created
-            name: str. The name of the item
-            quantity: int. The quantity of the item
-            notes: (optional) str. The notes of the item
-            is_packed: bool. Whether the item is packed
-            is_returning: bool. Whether the item is returning
-    
-    Errors: 
-        - 404: Item not found
-        - 500: Failed to get item
-    """
-    # Get Supabase client
-    supabase_client = g.supabase
-    if not supabase_client:
-        return jsonify({'error': 'Supabase client not initialized'}), 500
-    
     # Get item
-    item = supabase_client\
+    item = g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
-        .eq('trips.user_id', user_id) \
+        .eq('trips.user_id', user.id) \
         .execute()
-    
+
     if not item.data:
-        return jsonify({'error': 'Item not found'}), 404
-    
-    # Assert item is valid
-    try:
-        item = Item.model_validate(item.data[0]).model_dump()
-    except ValidationError as e:
-        return jsonify({'error': str(e)}), 500
-    
+        abort(404, message="Item not found")
+
     # Return item
-    return jsonify({'item': item}), 200
+    return ItemResponse(item=item.data[0])
 
-@bp.route('/<item_id>', methods=['PUT'])
-@require_auth
-def update_item(user_id: str, item_id: str) -> tuple[Dict[str, Any], int]:
-    """
-    Update an item
-    If quantity is 0, the item is deleted
-    
-    Headers:
-        Authorization: str. The token of the user
-
-    Args:
-        item_id: str. The id of the item
-
-    Body:
-        name: (optional) str. The new name of the item
-        quantity: (optional) int. The new quantity of the item
-        notes: (optional) str. The new notes of the item
-        is_packed: (optional) bool. Whether the item is now packed
-        is_returning: (optional) bool. Whether the item is now returning
-    
-    Returns:
-        item:
-            id: str. The id of the item
-            user_id: str. The id of the user who created the item
-            trip_id: str. The id of the trip the item belongs to
-            created_at: datetime. The date and time the item was created
-            name: str. The name of the item
-            quantity: int. The quantity of the item
-            notes: (optional) str. The notes of the item
-    """
-    # Get item request data
-    try:
-        item_request = UpdateItemRequest(**request.get_json())
-    except ValidationError as e:
-        return jsonify({'error': str(e)}), 400
-
-    # Get Supabase client
-    supabase_client = g.supabase
-    if not supabase_client:
-        return jsonify({'error': 'Supabase client not initialized'}), 500
-
+@bp.delete('/<item_id>')
+@auth.login_required
+@bp.output(MessageResponse, status_code=200)
+def delete_item(item_id: str):
+    """Delete a specific item for the current user"""
+    # Get user
+    user = auth.current_user
 
     # Check if item exists
-    item = supabase_client\
+    item = g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
-        .eq('trips.user_id', user_id) \
+        .eq('trips.user_id', user.id) \
         .execute()
     
     if not item.data:
-        return jsonify({'error': 'Item not found'}), 404
-
-    # Delete item if quantity is 0
-    if item_request.quantity == 0:
-        supabase_client\
-            .table('items')\
-            .delete() \
-            .eq('id', item_id) \
-            .execute()
-        
-        if not item.data:
-            return jsonify({'error': 'Failed to delete item'}), 500
-
-        # Successfuly deleted item
-        return jsonify({'message': 'Item deleted successfully'}), 200
-
-    # Update item
-    updated_item = item_request.model_dump(exclude_none=True)
-    updated_item['id'] = item_id  # Ensure the ID is included for the update
-    item = supabase_client\
-        .table('items')\
-        .update(updated_item) \
-        .eq('id', item_id) \
-        .execute()
-    
-    if not item.data:
-        return jsonify({'error': 'Failed to update item'}), 500
-    
-    # Assert item is valid  
-    try:
-        item = Item.model_validate(item.data[0]).model_dump()
-    except ValidationError as e:
-        return jsonify({'error': str(e)}), 500
-    
-    # Return updated item
-    return jsonify({'item': item}), 200
-
-@bp.route('/<item_id>', methods=['DELETE'])
-@require_auth
-def delete_item(user_id: str, item_id: str) -> tuple[Dict[str, str], int]:
-    """
-    Delete an item
-    
-    Headers:
-        Authorization: str. The token of the user
-
-    Args:
-        item_id: str. The id of the item
-    
-    Returns:
-        message: str. The message that the item was deleted successfully
-    
-    Errors:
-        - 404: Item not found
-        - 500: Failed to delete item
-    """
-    # Get Supabase client
-    supabase_client = g.supabase
-    if not supabase_client:
-        return jsonify({'error': 'Supabase client not initialized'}), 500
-    
-    # Check if item exists
-    item = supabase_client\
-        .table('items')\
-        .select('*', 'trips(user_id)') \
-        .eq('id', item_id) \
-        .eq('trips.user_id', user_id) \
-        .execute()
-    
-    if not item.data:
-        return jsonify({'error': 'Item not found'}), 404
+        abort(404, message='Item not found')
     
     # Delete item
-    item = supabase_client\
+    item = g.supabase\
         .table('items')\
         .delete() \
         .eq('id', item_id) \
         .execute()
     
     if not item.data:
-        return jsonify({'error': 'Failed to delete item'}), 500
+        abort(500, 'Failed to delete item')
 
-    # Successfuly deleted item
-    return jsonify({'message': 'Item deleted successfully'}), 200
+    return MessageResponse(message='Item deleted successfully')
+    
+@bp.post('')
+@auth.login_required
+@bp.input(CreateItemRequest, location='json')
+@bp.output(ItemResponse, status_code=201)
+def create_item(json_data: CreateItemRequest):
+    """Create a new item and add it to the desired section and category"""
+    # Get user
+    user = auth.current_user
+
+    # Check if trip exists
+    trip = g.supabase\
+        .table('trips')\
+        .select('*') \
+        .eq('id', json_data.trip_id) \
+        .eq('user_id', user.id) \
+        .execute()
+    
+    if not trip.data:
+        abort(404, message="Trip not found")
+    
+    # Check if user owns the trip
+    if trip.data[0]['user_id'] != user.id:
+        abort(400, message="User does not own the trip")
+
+    
+    # Create new_item dictionary
+    quantity_destination = "list_quantity" if json_data.origin == ItemOrigin.LISTED else "purchased_quantity"
+    new_item = {
+        "trip_id": json_data.trip_id,
+        "name": json_data.name,
+        quantity_destination: json_data.quantity if json_data.quantity else 1,
+        "notes": json_data.notes,
+        "origin": json_data.origin,
+        "category_id": json_data.category_id
+    }
+    
+    # Create item
+    item = g.supabase\
+        .table('items')\
+        .insert(new_item)\
+        .execute()
+
+    if not item.data:
+        abort(500, message="Failed to create item")
+    
+    # Return item
+    return ItemResponse(item=item.data[0])
+    """Create a new item and add it to the purchased section"""
+    # Get user
+    user = auth.current_user
+
+    # Check if trip exists
+    trip = g.supabase\
+        .table('trips')\
+        .select('*') \
+        .eq('id', json_data.trip_id) \
+        .eq('user_id', user.id) \
+        .execute()
+    
+    if not trip.data:
+        abort(404, message="Trip not found")
+    
+    # Check if user owns the trip
+    if trip.data[0]['user_id'] != user.id:
+        abort(400, message="User does not own the trip")
+    
+    # Create new_item dictionary
+    new_item = {
+        "trip_id": json_data.trip_id,
+        "name": json_data.name,
+        "purchased_quantity": json_data.quantity if json_data.quantity else 1,
+        "notes": json_data.notes
+    }
+    
+    # Create item
+    item = g.supabase\
+        .table('items')\
+        .insert(new_item)\
+        .execute()
+
+    if not item.data:
+        abort(500, message="Failed to create item")
+    
+    # Return item
+    return ItemResponse(item=item.data[0])
+
+@bp.put('/<item_id>')
+@auth.login_required
+@bp.input(UpdateItemRequest, location='json')
+@bp.output(ItemResponse, status_code=200)
+def update_item(item_id: str, json_data: UpdateItemRequest):
+    """Update the item's name, quantity, notes, or category"""
+    # Get user
+    user = auth.current_user
+    
+    # Check if item exists
+    item = g.supabase\
+        .table('items')\
+        .select('*', 'trips(user_id)') \
+        .eq('id', item_id) \
+        .eq('trips.user_id', user.id) \
+        .execute()
+    
+    if not item.data:
+        abort(404, message='Item not found')
+
+    # Create updated_item dictionary
+    updated_item = dict()
+    if json_data.name:
+        updated_item['name'] = json_data.name
+    if json_data.quantity:
+        updated_item['list_quantity' if item.data[0]['origin'] == ItemOrigin.LISTED else 'purchased_quantity'] = json_data.quantity
+    if json_data.notes:
+        updated_item['notes'] = json_data.notes
+    if json_data.category_id:
+        updated_item['category_id'] = json_data.category_id
+
+    # Update item
+    item = g.supabase\
+        .table('items')\
+        .update(updated_item) \
+        .eq('id', item_id) \
+        .execute()
+    
+    if not item.data:
+        abort(500, message='Failed to update item')
+    
+    return ItemResponse(item=item.data[0])
+  
+@bp.put('/<item_id>/mark-as-packed')
+@auth.login_required
+@bp.input(PackedRequest, location='json')
+@bp.output(ItemResponse, status_code=200)
+def mark_as_packed(item_id: str, json_data: PackedRequest):
+    """Mark item as packed by updating its quantities (specifically "list_quantity" and "packed_quantity")"""
+    # Get user
+    user = auth.current_user
+    
+    # Check if item exists
+    item = g.supabase\
+        .table('items')\
+        .select('*', 'trips(user_id)') \
+        .eq('id', item_id) \
+        .eq('trips.user_id', user.id) \
+        .execute()
+    
+    if not item.data:
+        abort(404, message='Item not found')
+    
+    # Get current quantities
+    current_list_quantity = item.data[0]['list_quantity']
+    current_packed_quantity = item.data[0]['packed_quantity'] if item.data[0]['packed_quantity'] else 0
+    
+    if not current_list_quantity:
+        abort(400, message='Cannot mark item as packed if it is not in the list section')
+
+    if json_data.is_entire_quantity:
+        updated_item = {
+            'list_quantity': None,
+            'packed_quantity': current_packed_quantity + current_list_quantity
+        }
+    else:
+        # check that the quantity is provided and is less than or equal to the list quantity
+        if not json_data.quantity or current_list_quantity < json_data.quantity:
+            abort(400, message='Cannot mark item as packed because quantity was either not provided or it was too large')
+        
+        updated_item = {
+            'list_quantity': current_list_quantity - json_data.quantity,
+            'packed_quantity': current_packed_quantity + json_data.quantity
+        }
+
+    # Update item
+    item = g.supabase\
+        .table('items')\
+        .update(updated_item) \
+        .eq('id', item_id) \
+        .execute()
+    
+    if not item.data:
+        abort(500, message='Failed to update item')
+    
+    return ItemResponse(item=item.data[0])
+
+@bp.put('/<item_id>/mark-as-returning')
+@auth.login_required
+@bp.input(ReturningRequest, location='json')
+@bp.output(ItemResponse, status_code=200)
+def mark_as_returning(item_id: str, json_data: ReturningRequest):
+    """Mark item as returning by updating its quantities (specifically "packed_quantity" or "purchased_quantity" and "returning_quantity")"""
+    # Get user
+    user = auth.current_user
+    
+    # Check if item exists
+    item = g.supabase\
+        .table('items')\
+        .select('*', 'trips(user_id)') \
+        .eq('id', item_id) \
+        .eq('trips.user_id', user.id) \
+        .execute()
+    
+    if not item.data:
+        abort(404, message='Item not found')
+    
+    # Get current quantities
+    origin = 'packed_quantity' if item.data[0]['origin'] == ItemOrigin.LISTED else 'purchased_quantity'
+    current_origin_quantity = item.data[0][origin]
+    current_returning_quantity = item.data[0]['returning_quantity'] if item.data[0]['returning_quantity'] else 0
+
+    
+    if not current_origin_quantity:
+        abort(400, message='Cannot mark item as returning if it is not in the packed or purchased sections')
+
+    if json_data.is_entire_quantity:
+        updated_item = {
+            origin: None,
+            'returning_quantity': current_returning_quantity + current_origin_quantity
+        }
+    else:
+        # check that the quantity is provided and is less than or equal to the origin quantity
+        if not json_data.quantity or current_origin_quantity < json_data.quantity:
+            abort(400, message='Cannot mark item as returning because quantity was either not provided or it was too large')
+        
+        updated_item = {
+            origin: current_origin_quantity - json_data.quantity,
+            'returning_quantity': current_returning_quantity + json_data.quantity
+        }
+
+    # Update item
+    item = g.supabase\
+        .table('items')\
+        .update(updated_item) \
+        .eq('id', item_id) \
+        .execute()
+    
+    if not item.data:
+        abort(500, message='Failed to update item')
+    
+    return ItemResponse(item=item.data[0])
+
+@bp.put('/<item_id>/unmark-as-packed')
+@auth.login_required
+@bp.input(PackedRequest, location='json')
+@bp.output(ItemResponse, status_code=200)
+def unmark_as_packed(item_id: str, json_data: PackedRequest):
+    """Unmark item as packed by updating its quantities (specifically "list_quantity" and "packed_quantity")"""
+    # Get user
+    user = auth.current_user
+    
+    # Check if item exists
+    item = g.supabase\
+        .table('items')\
+        .select('*', 'trips(user_id)') \
+        .eq('id', item_id) \
+        .eq('trips.user_id', user.id) \
+        .execute()
+    
+    if not item.data:
+        abort(404, message='Item not found')
+    
+    # Get current quantities
+    current_packed_quantity = item.data[0]['packed_quantity'] 
+    current_list_quantity = item.data[0]['list_quantity'] if item.data[0]['list_quantity'] else 0
+    
+    if not current_packed_quantity:
+        abort(400, message='Cannot unmark item as packed if it is not in the packed section')
+
+    if json_data.is_entire_quantity:
+        updated_item = {
+            'list_quantity': current_list_quantity + current_packed_quantity,
+            'packed_quantity': None
+        }
+    else:
+        # check that the quantity is provided and is less than or equal to the packed quantity
+        if not json_data.quantity or current_packed_quantity < json_data.quantity:
+            abort(400, message='Cannot unmark item as packed because quantity was either not provided or it was too large')
+        
+        updated_item = {
+            'list_quantity': current_list_quantity + json_data.quantity,
+            'packed_quantity': current_packed_quantity - json_data.quantity
+        }
+
+    # Update item
+    item = g.supabase\
+        .table('items')\
+        .update(updated_item) \
+        .eq('id', item_id) \
+        .execute()
+    
+    if not item.data:
+        abort(500, message='Failed to update item')
+    
+    return ItemResponse(item=item.data[0])
+
+@bp.put('/<item_id>/unmark-as-returning')
+@auth.login_required
+@bp.input(ReturningRequest, location='json')
+@bp.output(ItemResponse, status_code=200)
+def unmark_as_returning(item_id: str, json_data: ReturningRequest):
+    """Unmark item as returning by updating its quantities (specifically "packed_quantity" or "purchased_quantity" and "returning_quantity")"""
+    # Get user
+    user = auth.current_user
+    
+    # Check if item exists
+    item = g.supabase\
+        .table('items')\
+        .select('*', 'trips(user_id)') \
+        .eq('id', item_id) \
+        .eq('trips.user_id', user.id) \
+        .execute()
+    
+    if not item.data:
+        abort(404, message='Item not found')
+    
+    # Get current quantities
+    current_returning_quantity = item.data[0]['returning_quantity']
+    origin = 'packed_quantity' if item.data[0]['origin'] == ItemOrigin.LISTED else 'purchased_quantity'
+    current_origin_quantity = item.data[0][origin] if item.data[0][origin] else 0
+
+    
+    if not current_returning_quantity:
+        abort(400, message='Cannot unmark item as returning if it is not in the returning section')
+
+    if json_data.is_entire_quantity:
+        updated_item = {
+            origin: current_origin_quantity + current_returning_quantity,
+            'returning_quantity': None
+        }
+    else:
+        # check that the quantity is provided and is less than or equal to the returning quantity
+        if not json_data.quantity or current_returning_quantity < json_data.quantity:
+            abort(400, message='Cannot unmark item as returning because quantity was either not provided or it was too large')
+        
+        updated_item = {
+            origin: current_origin_quantity + json_data.quantity,
+            'returning_quantity': current_returning_quantity - json_data.quantity
+        }
+
+    # Update item
+    item = g.supabase\
+        .table('items')\
+        .update(updated_item) \
+        .eq('id', item_id) \
+        .execute()
+    
+    if not item.data:
+        abort(500, message='Failed to update item')
+    
+    return ItemResponse(item=item.data[0])
