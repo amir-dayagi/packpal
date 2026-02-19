@@ -4,7 +4,7 @@ FROM continuumio/miniconda3:latest
 # Set working directory
 WORKDIR /app
 
-# Copy environment file and create the conda environment
+# Copy environment file
 COPY environment.yml .
 
 # Create the environment and clean up caches

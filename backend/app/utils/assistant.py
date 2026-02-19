@@ -1,46 +1,40 @@
-from langgraph.checkpoint.postgres import PostgresSaver
-from typing import List, Dict, Any, Generator
-from app.models.assistant import AssistantChatMessage, AssistantStreamResponse, AssistantChatRequest
-from assistant.graph import assistant_graph_builder, call_assistant
-from psycopg_pool import ConnectionPool
-from langchain_core.messages import ToolMessage, HumanMessage, AIMessage
+from assistant.graphs.creator.nodes.list_generator_node import InitialList
+from assistant.models.trip import Trip as AssistantTrip
+from assistant.models.category import Category as AssistantCategory
+from assistant.models.item import Item as AssistantItem
+from typing import List
 
-def get_chat_history(trip_id: str, connection_pool: ConnectionPool) -> List[AssistantChatMessage]:
-    """
-    Get the assistant chat history for a trip
-    """
-    with connection_pool.connection() as conn:
-        memory = PostgresSaver(conn)
-        assistant_graph = assistant_graph_builder.compile(checkpointer=memory)
-        state = assistant_graph.get_state({"configurable": {"thread_id": trip_id}}).values
-        if not state or not state['chat_history']:
-            return []
-        return [AssistantChatMessage(**message.model_dump()) for message in state['chat_history']]
-    
-def chat_with_assistant(request: AssistantChatRequest, connection_pool: ConnectionPool) -> Generator[AssistantStreamResponse, None, None]:
-    """
-    Chat with the assistant
-    """
-    with connection_pool.connection() as conn:
-        memory = PostgresSaver(conn)
-        assistant_graph = assistant_graph_builder.compile(checkpointer=memory)
-        trip = request.trip.model_dump()
-        packing_list = [item.model_dump() for item in request.packing_list]
-        for chunk in call_assistant(assistant_graph, request.message, trip, packing_list):
-            role = None
-            if isinstance(chunk['messages'][-1], ToolMessage):
-                role = 'tool'
-            elif isinstance(chunk['messages'][-1], HumanMessage):
-                role = 'user'
-            elif isinstance(chunk['messages'][-1], AIMessage):
-                role = 'assistant'
-            yield AssistantStreamResponse(
-                message=AssistantChatMessage(
-                    role=role,
-                    content=chunk['messages'][-1].content
-                ),
-                trip=chunk['trip'].model_dump(),
-                packing_list=[item.model_dump() for item in chunk['packing_list']]
-            )
+def assistant_trip_mapper(trip: dict) -> AssistantTrip:
+    return AssistantTrip(
+        id=trip.get("id", None),
+        name=trip["name"],
+        description=trip["description"],
+        start_date=trip["start_date"],
+        end_date=trip["end_date"]
+    )
 
+def assistant_categories_mapper(categories: List[dict], items: List[dict]) -> List[AssistantCategory]:
+    cateogries = {
+        category["id"]: AssistantCategory(
+            id=category.get("id", None),
+            name=category["name"],
+            items=[]
+        ) for category in categories
+    }
+    for item in items:
+        cateogries[item["category_id"]].items.append(AssistantItem(
+            id=item.get("id", None),
+            name=item["name"],
+            quantity=item["list_quantity"],
+            notes=item["notes"]
+        ))
+    return list(cateogries.values())
         
+
+def assistant_uncategorized_items_mapper(items: List[dict]) -> List[AssistantItem]:
+    return [AssistantItem(
+        id=item.get("id", None),
+        name=item["name"],
+        quantity=item["list_quantity"],
+        notes=item["notes"]
+    ) for item in items]

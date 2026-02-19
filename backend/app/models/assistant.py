@@ -1,44 +1,43 @@
+from typing import Optional, List, Union
 from pydantic import BaseModel
-from typing import List, Optional
 from enum import Enum
+from assistant.models.trip import Trip as AssistantTrip
+from assistant.models.category import Category as AssistantCategory
+from assistant.models.item import Item as AssistantItem
 
-class AssistantRole(str, Enum):
-    USER = "user"
-    ASSISTANT = "assistant"
-    TOOL = "tool"
+class StartAssistantQuery(BaseModel):
+    trip_id: Optional[int] = None
 
-class AssistantChatMessage(BaseModel):
-    role: AssistantRole
-    content: str
-
-class AssistantTrip(BaseModel):
-    id: int
-    name: str
-    description: Optional[str] = None
-    start_date: str
-    end_date: str
-
-class AssistantItem(BaseModel):
-    id: Optional[int] = None
-    name: str
-    quantity: int
-    notes: Optional[str] = None
-    
-class AssistantChatRequest(BaseModel):
+class StartAssistantResponse(BaseModel):
     message: str
     trip: AssistantTrip
-    packing_list: List[AssistantItem]
+    categories: List[AssistantCategory]
+    uncategorized_items: List[AssistantItem]
 
-class AssistantStreamResponse(BaseModel):
-    message: AssistantChatMessage
+class ChatAssistantRequest(BaseModel):
+    user_msg: str
     trip: AssistantTrip
-    packing_list: List[AssistantItem]
+    categories: List[AssistantCategory]
+    uncategorized_items: List[AssistantItem]
+
+class ChatAssistantResponseMode(str, Enum):
+    MESSAGE = "message"
+    VALUES = "values"
+
+class ChatAssistantValues(BaseModel):
+    trip: AssistantTrip
+    categories: List[AssistantCategory]
+    uncategorized_items: List[AssistantItem]
+
+class ChatAssistantResponse(BaseModel):
     done: bool = False
+    mode: ChatAssistantResponseMode
+    content: Union[str, ChatAssistantValues]
 
-class AssistantProcessRequest(BaseModel):
-    user_id: str
-    payload: str
-
-class AssistantChangesRequest(BaseModel):
+class AcceptAssistantRequest(BaseModel):
     trip: AssistantTrip
-    packing_list: List[AssistantItem]
+    categories: List[AssistantCategory]
+    uncategorized_items: List[AssistantItem]
+
+class AcceptAssistantResponse(BaseModel):
+    trip_id: int

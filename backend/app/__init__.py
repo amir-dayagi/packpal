@@ -1,12 +1,29 @@
-from app.config import Config
-from flask import Flask
+from .config import Config
+from apiflask import APIFlask, abort
+from flask import g, request
+from supabase import create_client, ClientOptions
 from flask_cors import CORS
 from psycopg_pool import ConnectionPool
 import atexit
 
 def create_app():
     """Create and configure the Flask application"""
-    app = Flask(__name__)
+    # Create the APIFlask application
+    app = APIFlask(__name__)
+    
+    @app.before_request
+    def initialize_supabase_client():
+        """Initialize the Supabase client"""
+        try:
+            g.supabase = create_client(
+                Config.SUPABASE_URL,
+                Config.SUPABASE_KEY,
+                options=ClientOptions(headers={
+                    'Authorization': request.headers.get("Authorization")
+                })
+            )
+        except Exception:
+            abort(500, message="Failed to connect to database")
     
     # Configure CORS
     CORS(app)
@@ -27,9 +44,10 @@ def create_app():
     atexit.register(connection_pool.close)
     
     # Register blueprints
-    from app.routes import trips, items, assistant
+    from app.routes import trips, items, categories, assistant
     app.register_blueprint(trips.bp)
     app.register_blueprint(items.bp)
+    app.register_blueprint(categories.bp)
     app.register_blueprint(assistant.bp)
 
     # Health check endpoint
