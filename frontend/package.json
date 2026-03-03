@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "set -a && . ../.env && set +a && next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "set -a && . ../.env && set +a && next build",
+    "start": "set -a && . ../.env && set +a && next start",
     "lint": "eslint"
   },
   "dependencies": {
