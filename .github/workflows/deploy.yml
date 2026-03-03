@@ -3,7 +3,9 @@ name: Build and Push Images
 on:
   push:
     branches: [ "**" ]
-
+  pull_request:
+    branches: [ "main" ]
+    
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
