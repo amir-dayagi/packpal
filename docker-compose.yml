@@ -1,0 +1,52 @@
+services:
+  # --- LangGraph Assistant ---
+  assistant:
+    image: ${DOCKER_USERNAME}/packpal-assistant:${PACKPAL_VERSION:-latest}
+    ports:
+      - "${ASSISTANT_PORT:-8123}:8000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URI=${SUPABASE_DIRECT_CONNECTION_URI}
+      - REDIS_URI=redis://langgraph-redis:6379
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+    depends_on:
+      langgraph-redis:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/ok')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # --- Quart Backend ---
+  backend:
+    image: ${DOCKER_USERNAME}/packpal-backend:${PACKPAL_VERSION:-latest}
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_ANON_KEY=${SUPABASE_ANON_KEY}
+      - BACKEND_ASSISTANT_API_URL=http://assistant:8000
+    depends_on:
+      assistant:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  # --- Infrastructure ---
+  langgraph-redis:
+    image: redis:7-alpine
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      retries: 5

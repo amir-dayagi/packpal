@@ -55,7 +55,7 @@ export default function AssistantPage() {
         setTrip(response.trip)
         setCategories(response.categories)
         setUncategorizedItems(response.uncategorized_items)
-        setMessages([{ role: "assistant", content: response.message }])
+        setMessages([{ type: "ai", content: response.message }])
         setIsThinking(false)
     }
 
@@ -64,7 +64,7 @@ export default function AssistantPage() {
     }, [])
 
     const handleChat = async (userMsg: string) => {
-        setMessages((prevMessages) => [...prevMessages, { role: "user", content: userMsg }])
+        setMessages((prevMessages) => [...prevMessages, { type: "human", content: userMsg }])
         const request = {
             user_msg: userMsg,
             trip: trip,
@@ -88,7 +88,7 @@ export default function AssistantPage() {
         setIsThinking(true)
         try {
             const stream = assistantService.chat(request)
-            setMessages((prevMessages) => [...prevMessages, { role: "assistant", content: "" }])
+            setMessages((prevMessages) => [...prevMessages, { type: "ai", content: "" }])
             for await (const update of stream) {
                 if (update.mode === ChatAssistantMode.MESSAGE) {
                     setMessages((prevMessages) => {
@@ -113,10 +113,13 @@ export default function AssistantPage() {
                         ...item,
                         id: item.id || -Date.now() - Math.random()
                     })))
+                    if (values.messages && values.messages.length > 0 && values.messages[values.messages.length - 1].type === "ai") {
+                        setMessages(values.messages)
+                    }
                 }
             }
         } catch (error) {
-            console.error("Stream error", error)
+            toast.error(`Stream error: ${error}`)
         } finally {
             setIsThinking(false)
         }

@@ -1,23 +1,21 @@
 import os
-from dotenv import load_dotenv
+from dotenv import load_dotenv, find_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+load_dotenv(find_dotenv())
 
 # Config class
 class Config:
     # Supabase config
     SUPABASE_URL = os.getenv('SUPABASE_URL')
-    SUPABASE_KEY = os.getenv('SUPABASE_KEY')
+    SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 
-    # Flask config
-    SECRET_KEY = os.getenv('SECRET_KEY', 'dev-key-change-in-production')
+    # Quart config
+    SECRET_KEY = os.getenv('BACKEND_SECRET_KEY')
 
-    # Google GenAI config
-    GOOGLE_GENAI_API_KEY = os.getenv('GOOGLE_API_KEY')
+    # Assistant config
+    ASSISTANT_API_URL = os.getenv('BACKEND_ASSISTANT_API_URL')
 
-    # LangGraph Checkpointer config
-    CHECKPOINTER_DB_URI = os.getenv('CHECKPOINTER_DB_URI')
+    required = [SUPABASE_URL, SUPABASE_KEY, SECRET_KEY, ASSISTANT_API_URL]
 
-    if not SUPABASE_URL or not SUPABASE_KEY or not GOOGLE_GENAI_API_KEY or not CHECKPOINTER_DB_URI:
-        raise ValueError('Missing environment variables')
+    if not all(required):
+        raise ValueError(f'Missing environment variables')

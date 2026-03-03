@@ -20,7 +20,7 @@ export interface AssistantItem {
 }
 
 export interface AssistantMessage {
-    role: "user" | "assistant"
+    type: "human" | "ai"
     content: string
 }
 
@@ -51,6 +51,7 @@ export interface ChatAssistantValues {
     trip: AssistantTrip
     categories: AssistantCategory[]
     uncategorized_items: AssistantItem[]
+    messages: AssistantMessage[]
 }
 
 export interface ChatAssistantResponse {

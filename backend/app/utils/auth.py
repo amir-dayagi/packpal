@@ -1,23 +1,28 @@
-from apiflask import HTTPTokenAuth
-from flask import current_app, g
-from supabase import create_client, ClientOptions
+from quart import g, abort
+from quart.utils import run_sync
+from functools import wraps
+from quart import request
 
-auth = HTTPTokenAuth()
-
-@auth.verify_token
-def verify_token(token: str) -> bool:
-    """Verify the token"""
-    try:
-        # Get user data from token
-        user_data = g.supabase.auth.get_user(token)
-
-        # Check if user data is valid
-        if not user_data:
-            False
+def login_required(f):
+    @wraps(f)
+    async def decorated(*args, **kwargs):
+        auth_header = request.headers.get("Authorization")
+        if not auth_header or not auth_header.startswith("Bearer "):
+            abort(401, "Missing or invalid Authorization header")
         
-        # Return user data
-        return user_data.user
+        token = auth_header.split(" ")[1]
+
+        try:
+            user_response = await run_sync(g.supabase.auth.get_user)(token)
+
+            if not user_response or not user_response.user:
+                abort(401, "Invalid or expired token")
+
+            g.user = user_response.user
+            
+        except Exception as e:
+            abort(401, "Authentication failed")
+
+        return await f(*args, **kwargs)
     
-    # Return False if token is invalid
-    except Exception:
-        return False
+    return decorated

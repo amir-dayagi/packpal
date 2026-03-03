@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { IconSparkles, IconSend } from "@tabler/icons-react"
 import { useState, useRef, useEffect } from "react"
 import { AssistantMessage } from "@/types/assistant"
+import { Spinner } from "../ui/spinner"
 
 interface AssistantChatCardProps {
     messages: AssistantMessage[]
@@ -38,9 +39,12 @@ export function AssistantChatCard({ messages, isThinking, onChat }: AssistantCha
                     <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                         <IconSparkles className="h-4 w-4 text-primary-foreground" />
                     </div>
-                    <div>
-                        <CardTitle className="text-lg">PackPal Assistant</CardTitle>
-                        <p className="text-xs text-muted-foreground">Powered by AI</p>
+                    <div className="w-full flex justify-between items-center">
+                        <div>
+                            <CardTitle className="text-lg">PackPal Assistant</CardTitle>
+                            <p className="text-xs text-muted-foreground">Powered by AI</p>
+                        </div>
+                        {isThinking && <Spinner className="size-6" data-icon="inline-start" />}
                     </div>
                 </div>
             </CardHeader>
@@ -50,10 +54,10 @@ export function AssistantChatCard({ messages, isThinking, onChat }: AssistantCha
                         {messages.map((message, index) => (message.content !== "" &&
                             <div
                                 key={index}
-                                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                                className={`flex ${message.type === "human" ? "justify-end" : "justify-start"}`}
                             >
                                 <div
-                                    className={`max-w-[85%] rounded-2xl px-4 py-4 ${message.role === "user"
+                                    className={`max-w-[85%] rounded-2xl px-4 py-4 ${message.type === "human"
                                         ? "bg-primary text-primary-foreground rounded-br-none"
                                         : "bg-muted text-foreground rounded-bl-none"
                                         }`}
