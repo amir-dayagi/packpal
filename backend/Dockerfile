@@ -1,26 +1,20 @@
-# Use a Miniconda (or Mambaforge) base image
-FROM continuumio/miniconda3:latest
+FROM python:3.11-slim
 
-# Set working directory
+# Set environment variables to optimize Python performance in Docker
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 WORKDIR /app
 
-# Copy environment file
-COPY environment.yml .
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create the environment and clean up caches
-RUN conda env create -f environment.yml && \
-    conda clean -afy
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Make sure conda is available and set the default environment
-# We set PATH so the env's python and binaries are used by default.
-ENV CONDA_DEFAULT_ENV=packpal
-ENV PATH=/opt/conda/envs/packpal/bin:$PATH
-
-# Copy the rest of the application code
 COPY . .
 
-# Expose Flask/Gunicorn port
 EXPOSE 5000
 
-# Default command using gunicorn; adjust module:app as needed
-CMD ["gunicorn", "-w", "4", "-b", "0.0.0.0:5000", "app:app"]
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000", "--loop", "uvloop", "--http", "httptools"]

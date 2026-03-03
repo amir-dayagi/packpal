@@ -1,0 +1,26 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+
+# Node/Frontend
+node_modules/
+.next/
+out/
+build/
+
+# Git
+.git
+.gitignore
+
+# OS-specific
+.DS_Store
+Thumbs.db

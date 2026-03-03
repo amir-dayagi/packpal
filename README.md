@@ -1,104 +1,115 @@
 # 🧳 PackPal
 
-PackPal is a full-stack web app that helps users effortlessly create and manage packing lists for their trips. Featuring an AI assistant powered by Google Gemini, PackPal makes sure you never forget an essential item again.
+PackPal is a full-stack, AI-powered packing assistant designed to ensure you never leave an essential item behind. By combining a modern web interface with a persistent LangGraph-based AI agent, PackPal generates intelligent packing lists tailored to your destination, duration, and activities.
 
 ---
 
 ## 🚀 Features
 
-- ✈️ Create trips and packing lists
-- 🤖 AI agent to suggest items for your trip  
-- 📱 Responsive and intuitive frontend (Next.js)  
-- 🧠 Backend logic with Flask and Supabase database integration  
-- 🔐 Secure environment variable management
+- **✈️ Smart Trip Planning**: Create and manage trips with ease.
+- **🤖 LangGraph AI Agent**: A stateful assistant that suggests items based on real-time logic.
+- **🔄 Persistent State**: Trip data and AI checkpoints are stored securely in Supabase.
+- **⚡ High Performance**: Asynchronous backend using Quart and Uvicorn with uvloop.
 
 ---
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: Next.js, Tailwind CSS  
-- **Backend**: Flask, Supabase  
-- **Database**: Supabase (PostgreSQL)  
-- **AI**: LangGraph with Google Gemini Model
+- **Frontend**: Next.js, Tailwind CSS
+- **Backend**: Quart (Async Python), Supabase Python SDK, LangGraph SDK
+- **AI Infrastructure**: LangGraph, LangSmith (Tracing)
+- **Database**: Supabase (PostgreSQL)
 
 ---
 
-## 🧪 Local Development Setup
+## 🗄️ 1. Mandatory Database Setup (Supabase)
 
-### 1. Clone the Repository
+Regardless of how you run the application (Docker or Local), you must set up your database first.
 
+1. ### Create a Project
+Head to [supabase.com](https://supabase.com) and create a new project.
+
+2. ### Initialize Schema
+Copy the contents of `schema.sql` from this repository and run it in the Supabase SQL Editor.
+
+---
+
+## 🧪 2. Local Development Setup
+
+### 🛠️ Prerequisites
+Ensure you have the following installed before proceeding:
+- **Python 3.10+** (for Backend and Assistant)
+- **Node.js 18+ & npm** (for Frontend)
+- **Git**
+
+---
+
+### 📡 Global Configuration
+PackPal uses a centralized environment strategy.
+1. Copy the template: `cp .env.example .env`
+2. Fill in the instructed values in the `.env` file.
+
+---
+
+### 🧠 AI Assistant (LangGraph)
+The assistant service manages the logic of the packing agent.
+1. Navigate & Install:
 ```bash
-git clone https://github.com/amir-dayagi/packpal.git
-cd packpal
+cd assistant
+pip install -e .
 ```
+2. Run Dev Server:
+```bash
+langgraph dev
+```
+*The assistant will be available at http://localhost:8123. This command provides a local inspector UI to debug your graph's states.*
 
-### 2. Set Up Supabase
-**1.** Go to https://supabase.com and create a new project.
+---
 
-**2.** Once the project is created, go to the SQL Editor and run the schema script found in `/schema.sql`
+### 🐍 Backend (Quart API)
+The backend acts as the bridge between your UI and the AI agent.
 
-**3.** You'll need the following values:
- - **Supabase URL**: Found under Project Settings > API > Project URL
- - **Supabase Anon Key**: Use the anon key from Project Settings > API Keys
- - **URI Connection String**: Go to Database > Connection Pooling, and copy the connection string URI (or construct manually from host, user, password, port, database name)
-
-### 3. Backend (Flask)
-**1.** Navigate to the backend directory:
-
+1. Navigate & Install:
 ```bash
 cd backend
+pip install -r requirements.txt
 ```
-
-**2.** Install [Conda](https://docs.conda.io/projects/conda/en/stable/user-guide/install/index.html) (skip this step if you have conda installed)
-
-**3.** Create and activate the Conda environment:
-
+2. Launch with Uvicorn:
 ```bash
-conda env create -f environment.yml
-conda activate packpal-backend
+# Runs on port 5000 with hot-reload enabled
+uvicorn app:app --port 5000 --loop uvloop 
 ```
+*Note: Ensure your BACKEND_ASSISTANT_API_URL in .env is set to http://localhost:8123 for local development.*
 
-**4.** Create a `.env` file in the `backend/` directory with the following content:
+---
 
+### 🎨 Frontend (Next.js)
+The frontend provides the user interface for managing trips and chatting with the assistant.
+
+1. Navigate & Install:
 ```bash
-SUPABASE_URL=<your-supabase-project-url>
-SUPABASE_KEY=<your-supabase-anon-key>
-GOOGLE_API_KEY=<get from https://makersuite.google.com/app/apikey>
-CHECKPOINTER_DB_URI=<your-supabase-direct-connection-uri>
-```
-
-**5.** Run the Flask backend:
-
-```bash
-flask run
-```
-
-### 4. Frontend (Next.js)
-**1.** Navigate to the frontend directory:
-
-```bash
-cd ../frontend
-```
-
-**2.** Install [Node.JS with npm](https://nodejs.org/en/download) (skip this if you have node installed already and/or use a different package manager)
-
-**3.** Install dependencies:
-
-```bash
+cd frontend
 npm install
 ```
-
-**4.** Create a `.env` file in the `frontend/` directory with the following content:
-
-```bash
-NEXT_PUBLIC_SUPABASE_URL=<your-supabase-project-url>
-NEXT_PUBLIC_SUPABASE_ANON_KEY=<your-supabase-anon-key>
-NEXT_PUBLIC_API_URL=http://127.0.0.1:5000
-```
-
-**5.** Start the development server:
-
+2. Run Development Server:
 ```bash
 npm run dev
 ```
+*The app will be available at http://localhost:3000. This setup uses a pre-dev script to automatically sync your root .env values.*
 
+---
+
+### 💡 Pro-Tips for Contributors
+
+- **Dependency Management**: We recommend using a virtual environment (like venv or conda) for the Python services to avoid version conflicts.
+
+- **Logging**: The Backend is configured with uvloop for high-performance async processing. If you encounter issues with async routes, check the console for Uvicorn's detailed error logs.
+
+- **Syncing Env**: If you add a new variable to the root .env, restart the Frontend dev server to ensure Next.js picks it up.
+
+## 🏗️ 3. Advanced: Production & Deployment
+If you wish to deploy PackPal to production, the repository provides the following assets:
+
+- **Dockerization**: We provide a docker-compose.yml and specialized Dockerfiles for the Backend and Assistant.
+
+- **Frontend**: The Next.js frontend is optimized for deployment on Vercel.

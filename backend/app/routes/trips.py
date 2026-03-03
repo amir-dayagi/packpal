@@ -1,228 +1,221 @@
 from datetime import date
-from apiflask import APIBlueprint, abort
+from quart import Blueprint, g, abort
+from quart.utils import run_sync
+from quart_schema import validate_request, validate_response, validate_querystring
+
 from ..models.category import CategoriesResponse
 from ..models.item import ItemsResponse
 from ..models.message_response import MessageResponse
-from ..utils.auth import auth
-from flask import g
 from ..models.trip import CreateTripRequest, TripResponse, TripStatusQuery, TripsResponse, UpdateTripRequest
+from ..utils.auth import login_required
 
-bp = APIBlueprint('trips', __name__, url_prefix='/trips')
+bp = Blueprint('trips', __name__, url_prefix='/trips')
 
-@bp.get('')
-@auth.login_required
-@bp.input(TripStatusQuery, location="query")
-@bp.output(TripsResponse, status_code=200)
-def get_trips(query_data: TripStatusQuery):
+@bp.route('', methods=['GET'])
+@login_required
+@validate_querystring(TripStatusQuery)
+@validate_response(TripsResponse, status_code=200)
+async def get_trips(query_args: TripStatusQuery):
     """Get all trips for the current user with a specific status if given"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Get trips
-    trips = g.supabase \
+    trips_query = g.supabase \
         .table('trips') \
         .select('*')
 
     status_filter = []
-    if query_data.packing:
+    if query_args.packing:
         status_filter.append('packing')
-    if query_data.traveling:
+    if query_args.traveling:
         status_filter.append('traveling')
-    if query_data.completed:
+    if query_args.completed:
         status_filter.append('completed')
     
-    trips = trips.eq('user_id', user.id) \
+    trips = await run_sync(trips_query.eq('user_id', user.id) \
         .in_('status', status_filter) \
         .order('created_at', desc=True) \
-        .execute()
+        .execute)()
     
-    print(trips.data)
-
     # Return trips
     return TripsResponse(trips=trips.data)
 
-@bp.get('/<trip_id>')
-@auth.login_required
-@bp.output(TripResponse, status_code=200)
-def get_trip(trip_id: str):
+@bp.route('/<trip_id>', methods=['GET'])
+@login_required
+@validate_response(TripResponse, status_code=200)
+async def get_trip(trip_id: str):
     """Get a specific trip for the current user"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Get trip
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute()
+        .execute)()
 
     if not trip.data:
-        abort(404, message="Trip not found")
+        abort(404, "Trip not found")
 
     # Return trip
     return TripResponse(trip=trip.data[0])
 
-@bp.post('')
-@auth.login_required
-@bp.input(CreateTripRequest, location='json')
-@bp.output(TripResponse, status_code=201)
-def create_trip(json_data: CreateTripRequest):
+@bp.route('', methods=['POST'])
+@login_required
+@validate_request(CreateTripRequest)
+@validate_response(TripResponse, status_code=201)
+async def create_trip(data: CreateTripRequest):
     """Create a new trip for the current user"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Validate dates
     try:
-        start_date = date.fromisoformat(json_data.start_date)
-        end_date = date.fromisoformat(json_data.end_date)
+        start_date = date.fromisoformat(data.start_date)
+        end_date = date.fromisoformat(data.end_date)
         if start_date < date.today():
-            abort(400, message="Start date cannot be in the past")
+            abort(400, "Start date cannot be in the past")
         if start_date > end_date:
-            abort(400, message="Start date must be smaller or equal to end date")
+            abort(400, "Start date must be smaller or equal to end date")
     except ValueError as e:
-        abort(400, message="Invalid date - " + str(e))
+        abort(400, "Invalid date - " + str(e))
 
     # Create new trip dictionary
     new_trip = {
         "user_id": user.id,
-        "name": json_data.name,
-        "start_date": json_data.start_date,
-        "end_date": json_data.end_date,
-        "description": json_data.description
+        "name": data.name,
+        "start_date": data.start_date,
+        "end_date": data.end_date,
+        "description": data.description
     }
 
     # Create trip
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .insert(new_trip)\
-        .execute()
+        .execute)()
 
     # Check if trip was created
     if not trip.data:
-        return abort(500, message="Failed to create trip")
+        abort(500, description="Failed to create trip")
     
     # Return trip
     return TripResponse(trip=trip.data[0])
 
-@bp.put('/<trip_id>')
-@auth.login_required
-@bp.input(UpdateTripRequest, location='json')
-@bp.output(TripResponse, status_code=200)
-def update_trip(trip_id: str, json_data: UpdateTripRequest):
+@bp.route('/<trip_id>', methods=['PUT'])
+@login_required
+@validate_request(UpdateTripRequest)
+@validate_response(TripResponse, status_code=200)
+async def update_trip(trip_id: str, data: UpdateTripRequest):
     """Update a specific trip for the current user"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Check if trip exists
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute()
+        .execute)()
     
     if not trip.data:
-        abort(404, message="Trip not found")
+        abort(404, "Trip not found")
     
     # Validate dates
     try:
-        start_date = date.fromisoformat(json_data.start_date if json_data.start_date else trip.data[0]['start_date'])
-        end_date = date.fromisoformat(json_data.end_date if json_data.end_date else trip.data[0]['end_date'])
+        date.fromisoformat(data.start_date if data.start_date else trip.data[0]['start_date'])
+        date.fromisoformat(data.end_date if data.end_date else trip.data[0]['end_date'])
     except ValueError as e:
-        abort(400, message="Invalid date - " + str(e))
+        abort(400, "Invalid date - " + str(e))
 
     # Create updated trip dictionary
-    updated_trip = json_data.model_dump(exclude_none=True)
+    updated_trip = data.model_dump(exclude_none=True)
 
     # Update trip
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .update(updated_trip) \
         .eq('id', trip_id) \
-        .execute()
+        .execute)()
     
     if not trip.data:
-        abort(500, message="Failed to update trip")
+        abort(500, description="Failed to update trip")
     
     # Return updated trip
     return TripResponse(trip=trip.data[0])
 
-@bp.delete('/<trip_id>')
-@auth.login_required
-@bp.output(MessageResponse, status_code=200)
-def delete_trip(trip_id: str):
+@bp.route('/<trip_id>', methods=['DELETE'])
+@login_required
+@validate_response(MessageResponse, status_code=200)
+async def delete_trip(trip_id: str):
     """Delete a specific trip for the current user"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Delete trip
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .delete() \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute() 
+        .execute)() 
 
     if not trip.data:
-        abort(500, message="Failed to delete trip")
+        abort(500, description="Failed to delete trip")
     
     return MessageResponse(message="Trip deleted successfully")
 
-@bp.get('/<trip_id>/items')
-@auth.login_required
-@bp.output(ItemsResponse, status_code=200)
-def get_trip_items(trip_id: str):
+@bp.route('/<trip_id>/items', methods=['GET'])
+@login_required
+@validate_response(ItemsResponse, status_code=200)
+async def get_trip_items(trip_id: str):
     """Get all the items associated with a specific trip"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Check if trip exists
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute()
+        .execute)()
     
     if not trip.data:
-        abort(404, 'Trip not found')
+        abort(404, "Trip not found")
 
     #  Get items
-    items = g.supabase\
+    items = await run_sync(g.supabase\
         .table('items')\
         .select('*') \
         .eq('trip_id', trip_id) \
         .order('id') \
-        .execute()
+        .execute)()
     
     return ItemsResponse(items=items.data)
 
-@bp.get('/<trip_id>/categories')
-@auth.login_required
-@bp.output(CategoriesResponse, status_code=200)
-def get_trip_categories(trip_id: str):
+@bp.route('/<trip_id>/categories', methods=['GET'])
+@login_required
+@validate_response(CategoriesResponse, status_code=200)
+async def get_trip_categories(trip_id: str):
     """Get all the categories associated with a specific trip"""
-    # Get user
-    user = auth.current_user
+    user = g.user
 
     # Check if trip exists
-    trip = g.supabase\
+    trip = await run_sync(g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute()
+        .execute)()
     
     if not trip.data:
-        abort(404, 'Trip not found')
+        abort(404, "Trip not found")
 
     #  Get categories
-    categories = g.supabase\
+    categories = await run_sync(g.supabase\
         .table('categories')\
         .select('*') \
         .eq('trip_id', trip_id) \
         .order('id') \
-        .execute()
+        .execute)()
     
     return CategoriesResponse(categories=categories.data)

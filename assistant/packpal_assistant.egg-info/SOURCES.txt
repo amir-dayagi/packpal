@@ -1,0 +1,9 @@
+pyproject.toml
+assistant/__init__.py
+assistant/assistant.py
+assistant/schema.py
+packpal_assistant.egg-info/PKG-INFO
+packpal_assistant.egg-info/SOURCES.txt
+packpal_assistant.egg-info/dependency_links.txt
+packpal_assistant.egg-info/requires.txt
+packpal_assistant.egg-info/top_level.txt

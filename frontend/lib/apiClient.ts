@@ -2,7 +2,7 @@
 
 import { createClient } from '@/lib/supabase/client';
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL;
 
 async function apiRequest(endpoint: string, options: RequestInit = {}, isStream = false) {
   const supabase = createClient();

@@ -1,0 +1,10 @@
+langgraph
+langchain
+langchain-google-genai
+python-dotenv
+langgraph-sdk
+pydantic
+langchain-core
+
+[dev]
+langgraph-cli[draw,inmem]
