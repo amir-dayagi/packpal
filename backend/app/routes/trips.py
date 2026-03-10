@@ -1,6 +1,5 @@
 from datetime import date
 from quart import Blueprint, g, abort
-from quart.utils import run_sync
 from quart_schema import validate_request, validate_response, validate_querystring
 
 from ..models.category import CategoriesResponse
@@ -32,10 +31,10 @@ async def get_trips(query_args: TripStatusQuery):
     if query_args.completed:
         status_filter.append('completed')
     
-    trips = await run_sync(trips_query.eq('user_id', user.id) \
+    trips = await trips_query.eq('user_id', user.id) \
         .in_('status', status_filter) \
         .order('created_at', desc=True) \
-        .execute)()
+        .execute()
     
     # Return trips
     return TripsResponse(trips=trips.data)
@@ -48,12 +47,12 @@ async def get_trip(trip_id: str):
     user = g.user
 
     # Get trip
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute)()
+        .execute()
 
     if not trip.data:
         abort(404, "Trip not found")
@@ -90,10 +89,10 @@ async def create_trip(data: CreateTripRequest):
     }
 
     # Create trip
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .insert(new_trip)\
-        .execute)()
+        .execute()
 
     # Check if trip was created
     if not trip.data:
@@ -111,12 +110,12 @@ async def update_trip(trip_id: str, data: UpdateTripRequest):
     user = g.user
 
     # Check if trip exists
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not trip.data:
         abort(404, "Trip not found")
@@ -132,11 +131,11 @@ async def update_trip(trip_id: str, data: UpdateTripRequest):
     updated_trip = data.model_dump(exclude_none=True)
 
     # Update trip
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .update(updated_trip) \
         .eq('id', trip_id) \
-        .execute)()
+        .execute()
     
     if not trip.data:
         abort(500, description="Failed to update trip")
@@ -152,12 +151,12 @@ async def delete_trip(trip_id: str):
     user = g.user
 
     # Delete trip
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .delete() \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute)() 
+        .execute() 
 
     if not trip.data:
         abort(500, description="Failed to delete trip")
@@ -172,23 +171,23 @@ async def get_trip_items(trip_id: str):
     user = g.user
 
     # Check if trip exists
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not trip.data:
         abort(404, "Trip not found")
 
     #  Get items
-    items = await run_sync(g.supabase\
+    items = await g.supabase\
         .table('items')\
         .select('*') \
         .eq('trip_id', trip_id) \
         .order('id') \
-        .execute)()
+        .execute()
     
     return ItemsResponse(items=items.data)
 
@@ -200,22 +199,22 @@ async def get_trip_categories(trip_id: str):
     user = g.user
 
     # Check if trip exists
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', trip_id) \
         .eq('user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not trip.data:
         abort(404, "Trip not found")
 
     #  Get categories
-    categories = await run_sync(g.supabase\
+    categories = await g.supabase\
         .table('categories')\
         .select('*') \
         .eq('trip_id', trip_id) \
         .order('id') \
-        .execute)()
+        .execute()
     
     return CategoriesResponse(categories=categories.data)

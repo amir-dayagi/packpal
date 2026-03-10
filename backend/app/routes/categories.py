@@ -1,5 +1,4 @@
 from quart import Blueprint, g, abort
-from quart.utils import run_sync
 from quart_schema import validate_request, validate_response
 
 from ..models.category import CategoryResponse, CreateCategoryReqeust, UpdateCategoryRequest
@@ -17,12 +16,12 @@ async def create_category(data: CreateCategoryReqeust):
     user = g.user
 
     # Check if trip exists
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', data.trip_id) \
         .eq('user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not trip.data:
         abort(404, "Trip not found")
@@ -33,10 +32,10 @@ async def create_category(data: CreateCategoryReqeust):
     }
     
     # Create category
-    category = await run_sync(g.supabase\
+    category = await g.supabase\
         .table('categories')\
         .insert(new_category)\
-        .execute)()
+        .execute()
 
     if not category.data:
         abort(500, description="Failed to create category")
@@ -53,12 +52,12 @@ async def update_category(category_id: str, data: UpdateCategoryRequest):
     user = g.user
 
     # Check if category exists and belongs to user
-    category = await run_sync(g.supabase\
+    category = await g.supabase\
         .table('categories')\
         .select('*', 'trips(id, user_id)') \
         .eq('id', category_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not category.data:
         abort(404, "Category not found")
@@ -68,11 +67,11 @@ async def update_category(category_id: str, data: UpdateCategoryRequest):
     }
     
     # Update Category
-    category = await run_sync(g.supabase\
+    category = await g.supabase\
         .table('categories')\
         .update(updated_category) \
         .eq('id', category_id) \
-        .execute)()
+        .execute()
     
     if not category.data:
         abort(500, description="Failed to update category")
@@ -88,22 +87,22 @@ async def delete_category(category_id: str):
     user = g.user
 
     # Check if category exists and belongs to user
-    category = await run_sync(g.supabase\
+    category = await g.supabase\
         .table('categories')\
         .select('*', 'trips(id, user_id)') \
         .eq('id', category_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not category.data:
         abort(404, "Category not found")
     
     # Delete category
-    category = await run_sync(g.supabase\
+    category = await g.supabase\
         .table('categories')\
         .delete() \
         .eq('id', category_id) \
-        .execute)() 
+        .execute() 
 
     if not category.data:
         abort(500, description="Failed to delete category")
