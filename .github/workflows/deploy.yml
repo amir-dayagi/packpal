@@ -3,8 +3,6 @@ name: Build and Push Images
 on:
   push:
     branches: [ "**" ]
-  pull_request:
-    branches: [ "main" ]
     
 jobs:
   build-and-push:
@@ -22,9 +20,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Set Short SHA
+      - name: Set Image Tag
         id: vars
-        run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+        run: |
+          # Get the 7-character SHA
+          SHA_SHORT=$(git rev-parse --short HEAD)
+          
+          # Check if the current branch is main
+          if [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "tag=prod-${SHA_SHORT}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=$dev-{SHA_SHORT}" >> $GITHUB_OUTPUT
+          fi
 
       - name: Generate Assistant Dockerfile
         run: |
@@ -37,7 +44,7 @@ jobs:
           context: ./backend
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/packpal-backend:${{ steps.vars.outputs.sha_short }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/packpal-backend:${{ steps.vars.outputs.tag }}
 
       - name: Build and Push Assistant
         uses: docker/build-push-action@v5
@@ -45,4 +52,4 @@ jobs:
           context: ./assistant
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/packpal-assistant:${{ steps.vars.outputs.sha_short }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/packpal-assistant:${{ steps.vars.outputs.tag }}
