@@ -56,13 +56,13 @@ The assistant service manages the logic of the packing agent.
 1. Navigate & Install:
 ```bash
 cd assistant
-pip install -e .
+pip install -e ".[dev]"
 ```
 2. Run Dev Server:
 ```bash
 langgraph dev
 ```
-*The assistant will be available at http://localhost:8123. This command provides a local inspector UI to debug your graph's states.*
+*The assistant will be available at http://localhost:2024. This command provides a local inspector UI to debug your graph's states.*
 
 ---
 
@@ -79,7 +79,7 @@ pip install -r requirements.txt
 # Runs on port 5000 with hot-reload enabled
 uvicorn app:app --port 5000 --loop uvloop 
 ```
-*Note: Ensure your BACKEND_ASSISTANT_API_URL in .env is set to http://localhost:8123 for local development.*
+*Note: Ensure your BACKEND_ASSISTANT_API_URL in .env is set to http://localhost:2024 for local development.*
 
 ---
 

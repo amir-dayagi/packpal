@@ -675,30 +675,6 @@ GRANT ALL ON SEQUENCE "public"."category_id_seq" TO "service_role";
 
 
 
-GRANT ALL ON TABLE "public"."checkpoint_blobs" TO "anon";
-GRANT ALL ON TABLE "public"."checkpoint_blobs" TO "authenticated";
-GRANT ALL ON TABLE "public"."checkpoint_blobs" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."checkpoint_migrations" TO "anon";
-GRANT ALL ON TABLE "public"."checkpoint_migrations" TO "authenticated";
-GRANT ALL ON TABLE "public"."checkpoint_migrations" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."checkpoint_writes" TO "anon";
-GRANT ALL ON TABLE "public"."checkpoint_writes" TO "authenticated";
-GRANT ALL ON TABLE "public"."checkpoint_writes" TO "service_role";
-
-
-
-GRANT ALL ON TABLE "public"."checkpoints" TO "anon";
-GRANT ALL ON TABLE "public"."checkpoints" TO "authenticated";
-GRANT ALL ON TABLE "public"."checkpoints" TO "service_role";
-
-
-
 GRANT ALL ON TABLE "public"."items" TO "anon";
 GRANT ALL ON TABLE "public"."items" TO "authenticated";
 GRANT ALL ON TABLE "public"."items" TO "service_role";

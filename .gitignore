@@ -40,3 +40,9 @@
 # typescript
 */.tsbuildinfo
 */next-env.d.ts
+
+#langgraph
+assistant/.langgraph_api/
+assistant/langgraph.json
+assistant/*.session.json
+assistant/langsmith/
