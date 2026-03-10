@@ -1,16 +1,26 @@
 from quart import Quart, abort, g, current_app, request
 from quart_schema import QuartSchema
 from quart_cors import cors
-from supabase import create_client, ClientOptions
+from supabase import acreate_client, AsyncClientOptions
 
 from .config import Config
+from .utils.auth import CustomOpenAPIProvider
 
 def create_app():
     """Create and configure the Flask application"""
     # Create the APIFlask application
     app = Quart(__name__)
     app = cors(app)
-    QuartSchema(app)
+    QuartSchema(
+        app,
+        security_schemes={
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer"
+            }
+        },
+        openapi_provider_class=CustomOpenAPIProvider
+    )
     
     # Configure app
     app.config['SECRET_KEY'] = Config.SECRET_KEY
@@ -18,13 +28,13 @@ def create_app():
     app.config['SUPABASE_KEY'] = Config.SUPABASE_KEY
 
     @app.before_request
-    def initialize_supabase_client():
+    async def initialize_supabase_client():
         """Initialize the Supabase client"""
         try:
-            g.supabase = create_client(
+            g.supabase = await acreate_client(
                 current_app.config['SUPABASE_URL'],
                 current_app.config['SUPABASE_KEY'],
-                options=ClientOptions(headers={
+                options=AsyncClientOptions(headers={
                     'Authorization': request.headers.get("Authorization")
                 })
             )

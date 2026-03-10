@@ -2,6 +2,8 @@ from quart import g, abort
 from quart.utils import run_sync
 from functools import wraps
 from quart import request
+from quart_schema import OpenAPIProvider
+
 
 def login_required(f):
     @wraps(f)
@@ -13,7 +15,7 @@ def login_required(f):
         token = auth_header.split(" ")[1]
 
         try:
-            user_response = await run_sync(g.supabase.auth.get_user)(token)
+            user_response = await g.supabase.auth.get_user(token)
 
             if not user_response or not user_response.user:
                 abort(401, "Invalid or expired token")
@@ -25,4 +27,20 @@ def login_required(f):
 
         return await f(*args, **kwargs)
     
+    setattr(decorated, "_is_secure", True)
+    
     return decorated
+
+
+class CustomOpenAPIProvider(OpenAPIProvider):
+    def build_paths(self, rule):
+        paths, components = super().build_paths(rule)
+        
+        func = self._app.view_functions[rule.endpoint]
+        
+        if hasattr(func, "_is_secure"):
+            path = list(paths.keys())[0]
+            for method in paths[path]:
+                paths[path][method].setdefault("security", []).append({"BearerAuth": []})
+        
+        return paths, components

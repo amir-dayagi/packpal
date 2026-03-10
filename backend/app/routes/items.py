@@ -1,5 +1,4 @@
 from quart import Blueprint, g, abort
-from quart.utils import run_sync
 from quart_schema import validate_request, validate_response
 
 from ..models.item import CreateItemRequest, ItemOrigin, ItemResponse, PackedRequest, UpdateItemRequest, ReturningRequest
@@ -16,12 +15,12 @@ async def get_item(item_id: str):
     user = g.user
 
     # Get item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
 
     if not item.data:
         abort(404, "Item not found")
@@ -37,22 +36,22 @@ async def delete_item(item_id: str):
     user = g.user
 
     # Check if item exists
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(404, "Item not found")
     
     # Delete item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .delete() \
         .eq('id', item_id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(500, description="Failed to delete item")
@@ -68,12 +67,12 @@ async def create_item(data: CreateItemRequest):
     user = g.user
 
     # Check if trip exists
-    trip = await run_sync(g.supabase\
+    trip = await g.supabase\
         .table('trips')\
         .select('*') \
         .eq('id', data.trip_id) \
         .eq('user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not trip.data:
         abort(404, "Trip not found")
@@ -90,10 +89,10 @@ async def create_item(data: CreateItemRequest):
     }
     
     # Create item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .insert(new_item)\
-        .execute)()
+        .execute()
 
     if not item.data:
         abort(500, description="Failed to create item")
@@ -110,12 +109,12 @@ async def update_item(item_id: str, data: UpdateItemRequest):
     user = g.user
     
     # Check if item exists
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(404, "Item not found")
@@ -132,11 +131,11 @@ async def update_item(item_id: str, data: UpdateItemRequest):
         updated_item['category_id'] = data.category_id
 
     # Update item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .update(updated_item) \
         .eq('id', item_id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(500, description="Failed to update item")
@@ -152,12 +151,12 @@ async def mark_as_packed(item_id: str, data: PackedRequest):
     user = g.user
     
     # Check if item exists
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(404, "Item not found")
@@ -185,11 +184,11 @@ async def mark_as_packed(item_id: str, data: PackedRequest):
         }
 
     # Update item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .update(updated_item) \
         .eq('id', item_id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(500, description="Failed to update item")
@@ -205,12 +204,12 @@ async def mark_as_returning(item_id: str, data: ReturningRequest):
     user = g.user
     
     # Check if item exists
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(404, "Item not found")
@@ -240,11 +239,11 @@ async def mark_as_returning(item_id: str, data: ReturningRequest):
         }
 
     # Update item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .update(updated_item) \
         .eq('id', item_id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(500, description="Failed to update item")
@@ -260,12 +259,12 @@ async def unmark_as_packed(item_id: str, data: PackedRequest):
     user = g.user
     
     # Check if item exists
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(404, "Item not found")
@@ -293,11 +292,11 @@ async def unmark_as_packed(item_id: str, data: PackedRequest):
         }
 
     # Update item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .update(updated_item) \
         .eq('id', item_id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(500, description="Failed to update item")
@@ -313,12 +312,12 @@ async def unmark_as_returning(item_id: str, data: ReturningRequest):
     user = g.user
     
     # Check if item exists
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .select('*', 'trips(user_id)') \
         .eq('id', item_id) \
         .eq('trips.user_id', user.id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(404, "Item not found")
@@ -348,11 +347,11 @@ async def unmark_as_returning(item_id: str, data: ReturningRequest):
         }
 
     # Update item
-    item = await run_sync(g.supabase\
+    item = await g.supabase\
         .table('items')\
         .update(updated_item) \
         .eq('id', item_id) \
-        .execute)()
+        .execute()
     
     if not item.data:
         abort(500, description="Failed to update item")

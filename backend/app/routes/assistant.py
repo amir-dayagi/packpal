@@ -1,5 +1,4 @@
 from quart import Response, Blueprint, g, abort
-from quart.utils import run_sync
 from quart_schema import validate_querystring, validate_request, validate_response
 
 from ..models.assistant import AssistantTrip, AssistantCategory, AssistantItem, StartAssistantQuery, StartAssistantResponse, ChatAssistantRequest, ChatAssistantResponse, ChatAssistantResponseMode, ChatAssistantValues, AcceptAssistantRequest, AcceptAssistantResponse
@@ -21,35 +20,35 @@ async def start_assistant(query_args: StartAssistantQuery):
     uncategorized_items = []
 
     if query_args.trip_id:
-        trip = await run_sync(g.supabase \
+        trip = await g.supabase \
             .table('trips') \
             .select('*') \
             .eq('id', query_args.trip_id) \
             .eq('user_id', user.id) \
-            .execute)()
+            .execute()
         
         if not trip.data:
             abort(404, 'Trip not found')
         
-        categories = await run_sync(g.supabase \
+        categories = await g.supabase \
             .table('categories') \
             .select('*') \
             .eq('trip_id', query_args.trip_id) \
-            .execute)()
+            .execute()
 
-        categorized_items = await run_sync(g.supabase \
+        categorized_items = await g.supabase \
             .table('items') \
             .select('*') \
             .eq('trip_id', query_args.trip_id) \
             .not_.is_('category_id', None) \
-            .execute)()
+            .execute()
         
-        uncategorized_items = await run_sync(g.supabase \
+        uncategorized_items = await g.supabase \
             .table('items') \
             .select('*') \
             .eq('trip_id', query_args.trip_id) \
             .is_('category_id', None) \
-            .execute)()
+            .execute()
         
         trip = assistant_trip_mapper(trip.data[0])
         categories = assistant_categories_mapper(categories.data, categorized_items.data)
@@ -131,12 +130,12 @@ async def accept_assistant(data: AcceptAssistantRequest):
     
     try:
         # Call the atomic postgres function
-        res = await run_sync(g.supabase.rpc('accept_assistant_results', {
+        res = await g.supabase.rpc('accept_assistant_results', {
             'p_user_id': user.id,
             'p_trip': trip_dict,
             'p_categories': categories_dict,
             'p_uncategorized_items': uncategorized_items_dict
-        }).execute)()
+        }).execute()
         
         trip_id = res.data
         
